@@ -31,6 +31,7 @@ import {
   type NetworkConfig,
   type NetworkKey,
 } from "@/lib/xrpl/constants";
+import { withBasePath } from "@/lib/utils/basePath";
 import { parseTxJsonInput, TxJsonParseError } from "@/lib/xrpl/parseTx";
 import Sidebar from "../components/Sidebar";
 
@@ -551,7 +552,7 @@ export default function Home(): JSX.Element {
     >
       <span className="sr-only">Open XRPL GPT</span>
       <Image
-        src="/OpenAI-white-monoblossom.svg"
+        src={withBasePath("/OpenAI-white-monoblossom.svg")}
         alt="OpenAI logo"
         width={38}
         height={38}
@@ -1457,7 +1458,7 @@ export default function Home(): JSX.Element {
             <h1 className="relative -top-4 sm:-top-8 flex flex-wrap items-center justify-center gap-6 text-center text-3xl font-bold sm:text-[34px]">
 
               <Image
-                src="/xrpl-logo.svg"
+                src={withBasePath("/xrpl-logo.svg")}
                 alt="XRPL 로고"
                 width={350}
                 height={60}

@@ -14,10 +14,35 @@ type MarkdownTooltipState = {
   error: string | null;
 };
 
+const prefixAssetUrl = (url?: string) =>
+  url && url.startsWith("/") ? withBasePath(url) : url;
+
 const markdownComponents = {
-  a: ({ node: _node, ...props }: ComponentProps<"a"> & { node?: unknown }) => (
-    <a {...props} target="_blank" rel="noreferrer" />
-  ),
+  a: ({
+    node: _node,
+    href,
+    ...props
+  }: ComponentProps<"a"> & { node?: unknown }) => {
+    const patchedHref =
+      typeof href === "string" ? prefixAssetUrl(href) : href;
+    return (
+      <a
+        {...props}
+        href={patchedHref}
+        target="_blank"
+        rel="noreferrer"
+      />
+    );
+  },
+  img: ({
+    node: _node,
+    src,
+    ...props
+  }: ComponentProps<"img"> & { node?: unknown }) => {
+    const patchedSrc = typeof src === "string" ? prefixAssetUrl(src) : src;
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img {...props} src={patchedSrc} />;
+  },
 };
 
 const MARKDOWN_TOOLTIP_CLASS =
