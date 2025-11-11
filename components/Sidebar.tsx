@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ComponentProps, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
+import { withBasePath } from "@/lib/utils/basePath";
 import '../app/globals.css';
 
 const pretty = (obj: unknown) => JSON.stringify(obj, null, 2);
@@ -37,7 +38,7 @@ const useMarkdownTooltip = (path: string): MarkdownTooltipState => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(path, { cache: "no-store" });
+        const response = await fetch(withBasePath(path), { cache: "no-store" });
         if (!response.ok) {
           throw new Error(`Failed to load ${path} (${response.status})`);
         }

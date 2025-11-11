@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { withBasePath } from "@/lib/utils/basePath";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   title: "XRPL Dev Console",
   description: "XRPL Developer Console",
   icons: {
-    icon: "/xrpl-favicon.png",
+    icon: withBasePath("/xrpl-favicon.png"),
   },
 };
 
