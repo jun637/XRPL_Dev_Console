@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
+import '../app/globals.css';
 import type { JSX } from "react";
 import {
   useCallback,
@@ -31,10 +32,14 @@ import {
   type NetworkKey,
 } from "@/lib/xrpl/constants";
 import { parseTxJsonInput, TxJsonParseError } from "@/lib/xrpl/parseTx";
+import Sidebar from "../components/Sidebar";
+
 
 type ConnectionStatus = "connecting" | "connected" | "error";
 
 type FundWalletResponse = Awaited<ReturnType<Client["fundWallet"]>>;
+
+type AccountDataState = "idle" | "loading" | "ready" | "not_found" | "error";
 
 type MutableTx = Record<string, unknown> & {
   Account?: string;
@@ -47,7 +52,6 @@ interface RippledError extends Error {
     error_message?: string;
   };
 }
-
 interface AccountSnapshot {
   balanceXrp: string;
   iouBalance: string;
@@ -56,22 +60,17 @@ interface AccountSnapshot {
   ownerCount?: number;
   flags?: Partial<AccountInfoAccountFlags>;
 }
-
 interface SavedWallet {
   name: string;
   classicAddress: string;
   publicKey: string;
   seed: string;
 }
-
-type AccountDataState = "idle" | "loading" | "ready" | "not_found" | "error";
-
 interface TransactionSummary {
   engineResult: string | null;
   engineResultMessage: string | null;
   hash: string | null;
 }
-
 interface AccountTransactionEntry {
   tx: Record<string, unknown>;
   meta?: Record<string, unknown>;
@@ -92,9 +91,10 @@ const defaultTxTemplate = `{
     "value": "1000"
   }
 }`;
-
 const SAVED_WALLETS_STORAGE_KEY = "xrpltool:saved-wallets";
+
 const COPY_FEEDBACK_DURATION_MS = 1500;
+
 const rippleEpoch = 946684800;
 
 const dropsToXrp = (drops: string): string => {
@@ -142,17 +142,6 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-const formatRippleTime = (raw: unknown): string => {
-  if (typeof raw !== "number") {
-    return "-";
-  }
-  const unixTime = raw + rippleEpoch;
-  const date = new Date(unixTime * 1000);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
-  }
-  return date.toISOString();
-};
 const formatRippleTimeKST = (raw: unknown): string => {
   if (typeof raw !== "number") return "-";
   const unixTime = raw + rippleEpoch; // seconds
@@ -218,15 +207,17 @@ const buttonDisabledClass =
   "cursor-not-allowed bg-white/5 text-white/40 hover:bg-white/5";
 const smallButtonClass =
   "rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold transition hover:bg-white/25";
-const walletButtonClass =
-  "rounded-full bg-white/15 px-3.5 py-1.5 text-sm font-semibold transition hover:bg-white/25";
-const accentKoreanClass = "text-[#F0D9FF]";
+const accentKoreanClass = "text-[#C4B5FD]";
 function ConnectDropdownButton({
   onCreate,
   onLoad,
+  onGirin,
+  buttonClassName,
 }: {
   onCreate: () => void;
   onLoad: () => void;
+  onGirin?: () => void;
+  buttonClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
@@ -272,7 +263,7 @@ function ConnectDropdownButton({
       <button
         ref={btnRef}
         type="button"
-        className={buttonBaseClass}
+        className={`${buttonBaseClass} ${buttonClassName ?? ""}`.trim()}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={toggle}
@@ -335,72 +326,34 @@ function ConnectDropdownButton({
               Connect using an existing seed
             </span>
           </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ConnectSplitButton({
-  onConnect,
-  onCreate,
-}: {
-  onConnect: () => void;
-  onCreate: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    if (open) {
-      document.addEventListener("click", onDocClick);
-      document.addEventListener("keydown", onKey);
-    }
-    return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <div ref={menuRef} className="relative inline-flex">
-      <button type="button" className={buttonBaseClass} onClick={onConnect}>
-        Connect Wallet
-      </button>
-      <button
-        type="button"
-        aria-label="More wallet actions"
-        className="ml-1 rounded-full bg-white/15 px-2 py-1.5 text-sm font-semibold transition hover:bg-white/25"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-      >
-        ▾
-      </button>
-
-      {open && (
-        <div
-          className="absolute right-0 z-30 mt-2 w-44 overflow-hidden rounded-xl border border-white/15 bg-black/90 shadow-lg shadow-black/40 backdrop-blur"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            className="block w-full px-4 py-2 text-left text-sm text-white hover:bg-white/10"
-            onClick={() => {
-              setOpen(false);
-              onCreate(); // = handleGenerateWallet
-            }}
-          >
-            Create New (Generate)
-          </button>
+          {onGirin && (
+            <button
+              type="button"
+              data-menuitem
+              role="menuitem"
+              className="w-full rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus:outline-none inline-flex gap-2"
+              onClick={() => choose(onGirin)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  choose(onGirin);
+                }
+                if (e.key === "ArrowDown") {
+                  // 다음 메뉴로 포커스 이동
+                  (e.currentTarget.nextElementSibling as HTMLElement | null)?.focus();
+                }
+                if (e.key === "ArrowUp") {
+                  // 마지막 항목으로 포커스 이동
+                  (e.currentTarget.parentElement?.lastElementChild as HTMLElement | null)?.focus();
+                }
+              }}
+            >
+              <span className="flex flex-col">
+                <span className="text-white font-medium">Connect with Girin Wallet</span>
+                <span className="text-xs text-white/70">Open Girin App to connect with QR code</span>
+              </span>
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -555,6 +508,7 @@ export default function Home(): JSX.Element {
   const [copiedWalletName, setCopiedWalletName] = useState<string | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isFlagsModalOpen, setIsFlagsModalOpen] = useState(false);
+  const [isIouBalancesModalOpen, setIsIouBalancesModalOpen] = useState(false);
   const [isTrustlinesModalOpen, setIsTrustlinesModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isHistoryDetailModalOpen, setIsHistoryDetailModalOpen] = useState(false);
@@ -579,6 +533,58 @@ export default function Home(): JSX.Element {
 
   const [txInput, setTxInput] = useState(defaultTxTemplate);
   const txInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const chatbotLauncherButton = (
+    <button
+      type="button"
+      onClick={() => {
+        if (typeof window !== "undefined") {
+          window.open(
+            "https://chatgpt.com/g/g-690be9c9a6c88191abd28e5c42f54872-xrpl-gpt",
+            "_blank",
+            "noopener,noreferrer",
+          );
+        }
+      }}
+      className="inline-flex h-10 w-12 items-center justify-center rounded-lg border border-white/20 bg-white/15 text-white backdrop-blur transition hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40"
+    >
+      <span className="sr-only">Open XRPL GPT</span>
+      <Image
+        src="/OpenAI-white-monoblossom.svg"
+        alt="OpenAI logo"
+        width={38}
+        height={38}
+        priority={false}
+      />
+    </button>
+  );
+
+  const handleConnectGirin = useCallback(() => {
+    // 여기서 실제 QR 모달 열기나 딥링크 호출을 붙이면 됨
+    // 예시 1) 커스텀 이벤트로 모달 트리거
+    window.dispatchEvent(new CustomEvent("girin:open-qr-connect"));
+  
+    // 예시 2) 가능한 경우 딥링크 시도
+    // window.location.href = "girin://connect";
+  
+    setWalletMessage("Girin Wallet 연결을 시작합니다. 앱에서 QR로 연결하세요(구현 예정)");
+    setWalletError(null);
+  }, []);
+
+  const handleInsertTx = useCallback(
+    (next: string, mode: "replace" | "append" = "replace") => {
+      setTxInput((prev) =>
+        mode === "replace" ? next : `${prev.trim()}\n\n${next.trim()}`
+      );
+      requestAnimationFrame(() => txInputRef.current?.focus());
+    },
+    [],
+  );
+
+  
+
+
   const handleTxKeyDown: React.KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.key !== "Enter") return;
   
@@ -640,6 +646,39 @@ export default function Home(): JSX.Element {
   const [isSubmittingTx, setIsSubmittingTx] = useState(false);
   const [txResult, setTxResult] = useState<TransactionSummary | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
+
+  const iouBalanceEntries = useMemo(
+    () =>
+      accountLines.map((line, index) => {
+        const currency =
+          typeof line.currency === "string" ? line.currency.toUpperCase() : "";
+        const issuer =
+          (typeof line.account === "string" && line.account) ||
+          "";
+        const numericBalance = Number(line.balance);
+        const formattedBalance = Number.isNaN(numericBalance)
+          ? line.balance
+          : numericBalance.toLocaleString("en-US", {
+            maximumFractionDigits: 6,
+          });
+        return {
+          id: `${currency}-${issuer}-${index}`,
+          currency,
+          issuer,
+          balance: formattedBalance,
+        };
+      }),
+    [accountLines],
+  );
+
+  const sidebarContext = useMemo(
+    () => ({
+      networkKey: network,
+      walletAddress: wallet?.classicAddress ?? undefined,
+      lastTxHash: txResult?.hash ?? null,
+    }),
+    [network, wallet?.classicAddress, txResult?.hash],
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -818,6 +857,18 @@ export default function Home(): JSX.Element {
     },
     [],
   );
+  useEffect(() => {
+    const onToggle = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { enabled?: boolean } | undefined;
+      const enabled = !!detail?.enabled;
+      // TODO: enabled에 따라 화면의 필드 위에 툴팁 오버레이를 보여주거나 제거
+      // ex) setShowTooltips(enabled)
+    };
+    window.addEventListener("xrpl-dev:toggle-tooltips" as any, onToggle);
+    return () => window.removeEventListener("xrpl-dev:toggle-tooltips" as any, onToggle);
+   }, 
+   [],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -858,6 +909,7 @@ export default function Home(): JSX.Element {
       }
     };
 
+    
     void connect();
 
     return () => {
@@ -1244,6 +1296,10 @@ export default function Home(): JSX.Element {
     setHistoryLoading(false);
   }, []);
 
+  const handleCloseIouBalancesModal = useCallback(() => {
+    setIsIouBalancesModalOpen(false);
+  }, []);
+
   const handleOpenHistoryDetail = useCallback((entry: AccountTransactionEntry) => {
     setSelectedHistoryEntry(entry);
     setIsHistoryDetailModalOpen(true);
@@ -1394,126 +1450,156 @@ export default function Home(): JSX.Element {
   }, [connectionStatus]);
 
   return (
-    <div className="min-h-screen bg-black text-white">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
-          <header className="space-y-6">
-            <h1 className="flex flex-wrap items-center justify-center gap-4 text-center text-3xl font-bold sm:text-[34px]">
+    <div className="min-h-screen bg-black text-white flex justify-center items-center">
+      
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-0 py-15">
+          <header className="space-y-8 ">
+            <h1 className="relative -top-4 sm:-top-8 flex flex-wrap items-center justify-center gap-6 text-center text-3xl font-bold sm:text-[34px]">
+
               <Image
                 src="/xrpl-logo.svg"
                 alt="XRPL 로고"
-                width={300}
+                width={350}
                 height={60}
                 priority
               />
-              <span className="leading-tight font-bold sm:text-[30px]">
+              <span className="leading-tight font-bold sm:text-[35px]">
                 Developer Console
               </span>
             </h1>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/10 p-1">
-              {networkList.map((item) => {
-                const isActive = item.key === network;
-                return (
+            <div className={`mt-2 z-[20] flex flex-wrap items-center gap-3 justify-center sm:justify-start ${isSidebarOpen ? "opacity-0 pointer-events-none" : ""}`}>
+            {/* 토글 버튼: 사이드바 닫혀있을 때만 표시 */}
+                {!isSidebarOpen && (
                   <button
-                    key={item.key}
                     type="button"
-                    onClick={() => handleSelectNetwork(item.key)}
-                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-                      isActive
-                        ? "bg-white text-black shadow-sm"
-                        : "text-white/80 hover:bg-white/10"
-                    }`}
+                    aria-label="Open sidebar"
+                    onClick={() => setIsSidebarOpen(v => !v)}
+                    className="inline-flex h-10 w-12 items-center justify-center rounded-lg border border-white/20 bg-white/15 backdrop-blur hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40"
                   >
-                    {item.label}
+                    <span className="sr-only">Toggle sidebar</span>
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <line x1="0" y1="4"  x2="30" y2="4" />
+                      <line x1="0" y1="12" x2="30" y2="12" />
+                      <line x1="0" y1="20" x2="30" y2="20" />
+                    </svg>
                   </button>
-                );
-              })}
+                )}
+              <div className="inline-flex items-center gap-0 rounded-full border border-white/20 bg-white/10 p-1">
+                {networkList.map((item) => {
+                  const isActive = item.key === network;
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => handleSelectNetwork(item.key)}
+                      className={`rounded-full px-5 py-1.5 text-sm font-semibold transition ${
+                        isActive ? "bg-white text-black shadow-sm" : "text-white/80 hover:bg-white/10"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center pointer-events-none text-sm text-white/80">
+                <span className={`mr-2 text-base ${connectionStatusMeta.dotClass}`}>
+                    ●
+                </span>
+                {connectionStatusMeta.label}
+              </div>
+              <div className="pointer-events-auto ml-auto">
+                {chatbotLauncherButton}
+              </div>
             </div>
-            <div className="pl-1 text-sm text-white/80">
-              <span className={`mr-2 text-base ${connectionStatusMeta.dotClass}`}>
-                ●
-              </span>
-              {connectionStatusMeta.label}
-            </div>
-          </div>
-        </header>
+         </header>
 
-        <main className="grid gap-8 md:grid-cols-2">
-          <section className="flex flex-col gap-20 rounded-2xl border border-white/10 bg-white/10 p-9 shadow-lg shadow-black/40 backdrop-blur">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-white">Wallet</h2>
-              <div className="flex flex-wrap items-center gap-2">
-              <ConnectDropdownButton
-                onCreate={handleGenerateWallet}
-                onLoad={handleConnectWallet}
-              />
-
-              <button
-                type="button"
-                className={buttonBaseClass}
-                onClick={handleOpenSavedWalletModal}
-              >
-                Saved Wallet
-              </button>
-
-              <button
-                type="button"
-                onClick={handleFaucet}
-                disabled={
-                  isFaucetLoading ||
-                  !wallet ||
-                  !isFaucetAvailable(currentNetworkConfig) ||
-                  connectionStatus !== "connected"
-                }
-                className={`${buttonBaseClass} ${
-                  isFaucetLoading ||
-                  !wallet ||
-                  !isFaucetAvailable(currentNetworkConfig) ||
-                  connectionStatus !== "connected"
-                    ? buttonDisabledClass
-                    : ""
-                }`}
-              >
-                {isFaucetLoading ? "요청 중..." : "Faucet"}
-              </button>
-            </div>
+        <main className="-mt-3 flex justify-center gap-6 md:grid-cols-2">
+          <section className="mt-2 flex-1 basis-0 min-w-0 flex flex-col gap-5 rounded-2xl border border-white/10 bg-white/10 px-5 py-5 shadow-lg shadow-black/40 backdrop-blur">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-start md:gap-17">
+              <h2 className="text-left text-2xl font-semibold text-white md:self-start md:ml-2">
+                Wallet
+              </h2>
+              <div className="flex flex-wrap items-center justify-start gap-3 md:flex-nowrap md:-ml-11">
+                <ConnectDropdownButton
+                  onCreate={handleGenerateWallet}
+                  onLoad={handleConnectWallet}
+                  onGirin={handleConnectGirin}  
+                  buttonClassName="whitespace-nowrap px-5 md:px-6"
+                />
+                <button
+                  type="button"
+                  className={`${buttonBaseClass} whitespace-nowrap px-5 md:px-6`}
+                  onClick={handleOpenSavedWalletModal}
+                >
+                  Saved Wallet
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFaucet}
+                  disabled={
+                    isFaucetLoading ||
+                    !wallet ||
+                    !isFaucetAvailable(currentNetworkConfig) ||
+                    connectionStatus !== "connected"
+                  }
+                  className={`${buttonBaseClass} whitespace-nowrap px-5 md:px-6 ${
+                    isFaucetLoading ||
+                    !wallet ||
+                    !isFaucetAvailable(currentNetworkConfig) ||
+                    connectionStatus !== "connected"
+                      ? buttonDisabledClass
+                      : ""
+                  }`}
+                >
+                  {isFaucetLoading ? "요청 중..." : "Faucet"}
+                </button>
+              </div>
             </div>
 
             {walletMessage ? (
-              <p className={`text-sm ${accentKoreanClass}`}>{walletMessage}</p>
+              <p className={`text-base ${accentKoreanClass}`}>{walletMessage}</p>
             ) : null}
             {walletError ? (
-              <p className="text-sm text-red-400">{walletError}</p>
+              <p className="text-base text-red-400">{walletError}</p>
             ) : null}
             {faucetError ? (
-              <p className="text-sm text-red-400">{faucetError}</p>
+              <p className="text-base text-red-400">{faucetError}</p>
             ) : null}
 
             {wallet ? (
-              <div className="space-y-3 rounded-xl border border-white/10 bg-black/30 p-4">
+              <div className="space-y-3 rounded-2xl border border-white/10 bg-black/30 px-3 py-3">
                 <div>
-                  <p className="text-xs uppercase text-white">
+                  <p className="text-xs uppercase tracking-wide text-white">
                     Current Wallet
                   </p>
-                  <p className="break-all text-sm font-semibold text-[#D4FF9A]">
+                  <p className="break-all text-sm  text-[#D4FF9A]">
                     {wallet.classicAddress}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-white">Public Key</p>
+                  <p className="text-xs uppercase tracking-wide text-white">Public Key</p>
                   <p className="break-all text-sm text-[#C6F4FF]">
                     {wallet.publicKey}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-white">Seed</p>
+                  <p className="text-xs uppercase tracking-wide text-white">Seed</p>
                   <p className="break-all text-sm text-[#FFB788]">
                     {wallet.seed}
                   </p>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-black/40 p-4 space-y-3">
+                <div className="space-y-3 rounded-2xl border border-white/10 bg-black/40 px-5 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-white">Account Info</p>
+                    <p className="text-lg font-semibold text-white">Account Info</p>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -1555,52 +1641,61 @@ export default function Home(): JSX.Element {
                     </div>
                   </div>
                   {accountState === "idle" ? (
-                    <p className={`mt-2 text-sm ${accentKoreanClass}`}>
+                    <p className={`mt-2 text-base ${accentKoreanClass}`}>
                       계정 정보를 불러오려면 잠시 기다려 주세요.
                     </p>
                   ) : null}
                   {accountState === "loading" ? (
-                    <p className={`mt-2 text-sm ${accentKoreanClass}`}>
+                    <p className={`mt-2 text-base ${accentKoreanClass}`}>
                       로딩 중...
                     </p>
                   ) : null}
                   {accountState === "not_found" ? (
-                    <p className={`mt-2 text-sm ${accentKoreanClass}`}>
+                    <p className={`mt-2 text-base ${accentKoreanClass}`}>
                       계정이 아직 활성화되지 않았습니다.
                     </p>
                   ) : null}
                   {accountState === "error" && accountError ? (
-                    <p className="mt-2 text-sm text-red-400">{accountError}</p>
+                    <p className="mt-2 text-base text-red-400">{accountError}</p>
                   ) : null}
                   {accountState === "ready" && accountInfo ? (
                     <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <dt className="text-white">XRP Balance</dt>
-                        <dd className="font-mono text-[#FFB3F9]">
+                        <dt className="text-sm text-white">XRP Balance</dt>
+                        <dd className="font-mono text-sm text-[#FFB3F9]">
                           {accountInfo.balanceXrp}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-white">IOU Balance</dt>
-                        <dd className="font-mono text-[#FFB3F9]">
-                          {accountInfo.iouBalance}
+                        <dt className="text-sm text-white">IOU Balance</dt>
+                        <dd className="font-mono text-sm text-[#FFB3F9]">
+                          <button
+                            type="button"
+                            onClick={() => setIsIouBalancesModalOpen(true)}
+                            disabled={accountLines.length === 0}
+                            className={`${smallButtonClass} px-3 py-1 text-[11px] font-semibold ${
+                              accountLines.length === 0 ? "cursor-not-allowed opacity-40" : ""
+                            }`}
+                          >
+                            View
+                          </button>
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-white">MPT Balance</dt>
-                        <dd className="font-mono text-[#FFB3F9]">
+                        <dt className="text-sm text-white">MPT Balance</dt>
+                        <dd className="font-mono text-sm text-[#FFB3F9]">
                           {accountInfo.mptBalance}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-white">Sequence</dt>
-                        <dd className="font-mono text-[#FFB3F9]">
+                        <dt className="text-sm text-white">Sequence</dt>
+                        <dd className="font-mono text-sm text-[#FFB3F9]">
                           {accountInfo.sequence}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-white">Owner Count</dt>
-                        <dd className="font-mono text-[#FFB3F9]">
+                        <dt className="text-sm text-white">Owner Count</dt>
+                        <dd className="font-mono text-sm text-[#FFB3F9]">
                           {accountInfo.ownerCount ?? "-"}
                         </dd>
                       </div>
@@ -1609,15 +1704,14 @@ export default function Home(): JSX.Element {
                 </div>
               </div>
             ) : (
-              <p className={`text-sm ${accentKoreanClass}`}>
-                아직 지갑이 없습니다. &ldquo;지갑 생성&rdquo; 또는
-                &ldquo;Connect Wallet&rdquo; 버튼을 사용해 지갑을 준비하세요.
+              <p className={`text-base ${accentKoreanClass}`}>
+                아직 지갑이 없습니다. &ldquo;Connect Wallet&rdquo; 또는 &ldquo;Saved Wallet&rdquo; 버튼을 클릭해 지갑을 연결하세요.
               </p>
             )}
 
             {faucetResult ? (
               <div
-                className={`rounded-lg border border-white/10 bg-black/40 p-3 text-sm ${accentKoreanClass}`}
+                className={`rounded-2xl border border-white/10 bg-black/40 px-8 py-3 text-base ${accentKoreanClass}`}
               >
                 Faucet 충전 후 현재 잔액:{" "}
                 <span className="font-mono">{faucetResult.balance} XRP</span>
@@ -1626,60 +1720,62 @@ export default function Home(): JSX.Element {
 
           </section>
 
-          <section className="flex flex-col gap-30 rounded-2xl border border-white/10 bg-white/10 p-6 shadow-lg shadow-black/40 backdrop-blur">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-              <div className="sm:flex-1">
-                <h2 className="text-lg font-semibold text-white">
+          <section className="mt-2 flex-1 basis-0 min-w-0 flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/10 px-4 py-5 shadow-lg shadow-black/40 backdrop-blur">
+
+            <div className="min-w-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+              <div className="sm:flex-2">
+                <h2 className="text-2xl font-semibold text-white">
                   Transaction Submit
                 </h2>
-                <p className={`mt-1 text-sm ${accentKoreanClass}`}>
+                <p className={`mt-3 text-sm ${accentKoreanClass}`}>
                   tx_json 데이터만 입력하세요.
-                  Account가 비어 있으면 현재 연결된 지갑 주소가 자동으로 사용됩니다.
+                </p>
+                <p className={`mt-1 text-sm whitespace-nowrap ${accentKoreanClass}`}>
+                  Account 필드가 비어 있으면 현재 연결된 지갑 주소가 자동으로 사용됩니다.
                 </p>
               </div>
-              <div>
+
+              <div className="min-w-0 flex sm:flex-col sm:items-end sm:justify-between sm:gap-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    void handleOpenHistoryModal();
-                  }}
+                  onClick={() => { void handleOpenHistoryModal(); }}
                   disabled={!wallet || connectionStatus !== "connected"}
                   className={`${buttonBaseClass} ${
-                    !wallet || connectionStatus !== "connected"
-                      ? buttonDisabledClass
-                      : ""
-                  }`}
+                    !wallet || connectionStatus !== "connected" ? buttonDisabledClass : ""
+                  } whitespace-nowrap`}
                 >
                   Transaction History
                 </button>
               </div>
+
             </div>
 
-            <textarea
-              ref={txInputRef}
-              onKeyDown={handleTxKeyDown}
-              value={txInput}
-              onChange={(event) => setTxInput(event.target.value)}
-              className="h-60 w-full rounded-xl border border-white/10 bg-black/40 p-4 font-mono text-sm text-white outline-none focus:border-white/40"
-              spellCheck={false}
-            />
+            {/* Textarea 영역 */}
+            <div className="min-w-0 flex flex-col gap-3 mt-4">
+              <textarea
+                ref={txInputRef}
+                onKeyDown={handleTxKeyDown}
+                value={txInput}
+                onChange={(event) => setTxInput(event.target.value)}
+                className="w-full min-h-[18rem] resize-y rounded-2xl border border-white/10 bg-black/40 px-5 py-6 font-mono text-sm text-white outline-none focus:border-white/40"
 
-            <div className="flex flex-col gap-3">
+                spellCheck={false}
+              />
+            </div>
+
+            {/* 버튼 섹션 */}
+            <div className="mt-4 min-w-0 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={handleSubmitTransaction}
                 disabled={isSubmittingTx}
-                className={`${buttonBaseClass} ${
-                  isSubmittingTx ? buttonDisabledClass : ""
-                } self-start`}
+                className={`${buttonBaseClass} ${isSubmittingTx ? buttonDisabledClass : ""} self-start`}
               >
                 {isSubmittingTx ? "전송 중..." : "Transaction Submit"}
               </button>
-              {txError ? (
-                <p className="text-sm text-red-400">{txError}</p>
-              ) : null}
+              {txError ? <p className="text-base text-red-400">{txError}</p> : null}
               {txResult ? (
-                <div className="rounded-lg border border-white/10 bg-black/40 p-3 text-sm text-slate-200">
+                <div className="rounded-2xl border border-white/10 bg-black/40 px-8 py-3 text-base text-slate-200">
                   <p>
                     TransactionResult:{" "}
                     {typeof txResult.engineResult === "string" ? (
@@ -1716,6 +1812,59 @@ export default function Home(): JSX.Element {
           </section>
         </main>
       </div>
+      {isIouBalancesModalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-6 py-10"
+          onClick={handleCloseIouBalancesModal}
+        >
+          <div
+            className="w-full max-w-2xl rounded-2xl border border-white/20 bg-black/90 p-6 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">IOU Balances</h3>
+                <p className={`mt-1 text-sm ${accentKoreanClass}`}>
+                  계정이 보유 중인 토큰과 잔액 목록입니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseIouBalancesModal}
+                className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:bg-white/25"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="mt-4 max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+              {iouBalanceEntries.length === 0 ? (
+                <p className="text-sm text-white/70">보유 중인 IOU가 없습니다.</p>
+              ) : (
+                iouBalanceEntries.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white/90"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-col">
+                        <span className="text-base font-semibold text-white">
+                          {entry.currency || "Unknown"}
+                        </span>
+                        <span className="text-xs text-white/60 break-all">
+                          Issuer: {entry.issuer || "-"}
+                        </span>
+                      </div>
+                      <span className="font-mono text-base text-[#D4FF9A]">
+                        {entry.balance ?? "-"}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
       {isSaveModalOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10"
@@ -1882,6 +2031,31 @@ export default function Home(): JSX.Element {
           </div>
         </div>
       ) : null}
+      {isSidebarOpen && (
+          <>
+            {/* 배경 오버레이 */}
+            <div
+              className="fixed inset-0 z-40 bg-black/60"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-hidden="true"
+            />
+            {/* 왼쪽 패널 */}
+            <aside
+              role="dialog"
+              aria-modal="true"
+              className="fixed left-0 top-0 z-50 h-full w-[360px] max-w-[85vw] translate-x-0 border-r border-white/10 bg-neutral-900 p-3 shadow-2xl shadow-black/40 backdrop-blur"
+            >
+              
+
+              <Sidebar
+                open={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                onInsertTx={handleInsertTx}
+                context={sidebarContext}
+              />
+            </aside>
+          </>
+        )}
 
       {isFlagsModalOpen ? (
         <div
