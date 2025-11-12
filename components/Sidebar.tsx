@@ -139,15 +139,21 @@ type Recipe = {
 };
 // 27 ~ 466 - Tx Library Recipe 배열 
 const RECIPES: Recipe[] = [
+  // ─────────────────────────────
+  // Payment
+  // ─────────────────────────────
   {
     id: "payment-xrp",
     title: "Payment (XRP)",
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "Payment",
-      Account: ctx?.walletAddress ?? "",
-      Destination: "",
-      Amount: "1000000",
+      Account: "보내는 주소",
+      Destination: "받는 주소",
+      Amount: "XRP drops 문자열 (예: '1000000')",
+      DestinationTag: "수취자 태그 (옵션)",
+      InvoiceID: "64바이트 hex (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -156,9 +162,15 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "Payment",
-      Account: ctx?.walletAddress ?? "",
-      Destination: "",
-      Amount: { currency: "USD", value: "10", issuer: "" },
+      Account: "보내는 주소",
+      Destination: "받는 주소",
+      Amount: { currency: "토큰코드", issuer: "발행자 주소", value: "수량" },
+      SendMax: { currency: "최대 지불 토큰", issuer: "발행자 주소", value: "수량 (옵션)" },
+      Paths: "경로 지정 배열 (옵션)",
+      DeliverMin: { currency: "최소 수령 토큰", issuer: "발행자 주소", value: "수량 (옵션)" },
+      DestinationTag: "수취자 태그 (옵션)",
+      InvoiceID: "64바이트 hex (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -167,9 +179,15 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "Payment",
-      Account: ctx?.walletAddress ?? "",
-      Destination: "",
-      Amount: { currency: "MPT", value: "10", issuer: "" },
+      Account: "보내는 주소",
+      Destination: "받는 주소",
+      Amount: { currency: "MPT코드", issuer: "발행자 주소", value: "수량" },
+      SendMax: { currency: "최대 지불 MPT", issuer: "발행자 주소", value: "수량 (옵션)" },
+      Paths: "경로 지정 배열 (옵션)",
+      DeliverMin: { currency: "최소 수령 MPT", issuer: "발행자 주소", value: "수량 (옵션)" },
+      DestinationTag: "수취자 태그 (옵션)",
+      InvoiceID: "64바이트 hex (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -178,19 +196,48 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "Payment",
-      Account: ctx?.walletAddress ?? "",
-      Destination: "",
-      Amount: "1000000",
+      Account: "스왑 실행 계정",
+      Destination: "수취자 주소(본인 가능)",
+      SendMax: { currency: "입력자산", issuer: "입력자산 발행자", value: "최대 지불" },
+      Amount: { currency: "출력자산", issuer: "출력자산 발행자", value: "원하는 수량" },
+      DeliverMin: { currency: "출력자산", issuer: "출력자산 발행자", value: "최소 수령 (옵션)" },
+      Paths: "AMM 경유 경로 배열 (옵션)",
+      DestinationTag: "수취자 태그 (옵션)",
+      InvoiceID: "64바이트 hex (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
+
+  // ─────────────────────────────
+  // Account / Trust
+  // ─────────────────────────────
   {
     id: "accountset",
     title: "AccountSet",
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "AccountSet",
-      Account: ctx?.walletAddress ?? "",
-      SetFlag: 1,
+      Account: "계정 주소",
+      SetFlag: "설정할 플래그 번호 (옵션)",
+      ClearFlag: "해제할 플래그 번호 (옵션)",
+      Domain: "hex-encoded 도메인 (옵션)",
+      EmailHash: "이메일 해시 (옵션)",
+      TransferRate: "수수료율(만분율) (옵션)",
+      TickSize: "호가 단위 (옵션)",
+      NFTokenMinter: "NFT 민터 설정 주소 (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "accountdelete",
+    title: "AccountDelete",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "AccountDelete",
+      Account: "삭제할 계정 주소",
+      Destination: "잔액을 받을 주소",
+      DestinationTag: "수취자 태그 (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -199,99 +246,29 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "TrustSet",
-      Account: ctx?.walletAddress ?? "",
-      LimitAmount: { currency: "USD", issuer: "", value: "1000" },
+      Account: "설정 계정 주소",
+      LimitAmount: { currency: "토큰코드", issuer: "발행자 주소", value: "한도" },
+      QualityIn: "수신 품질(옵션)",
+      QualityOut: "송신 품질(옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
-  {
-    id: "credential-create",
-    title: "CredentialCreate",
-    isMainnetActive: true,
-    build: (ctx) => ({
-      TransactionType: "CredentialCreate",
-      Account: ctx?.walletAddress ?? "",
-      CredentialData: "Sample Data",
-    }),
-  },
-  {
-    id: "credential-accept",
-    title: "CredentialAccept",
-    isMainnetActive: true,
-    build: (ctx) => ({
-      TransactionType: "CredentialAccept",
-      Account: ctx?.walletAddress ?? "",
-      CredentialID: "12345",
-    }),
-  },
-  {
-    id: "credential-delete",
-    title: "CredentialDelete",
-    isMainnetActive: true,
-    build: (ctx) => ({
-      TransactionType: "CredentialDelete",
-      Account: ctx?.walletAddress ?? "",
-      CredentialID: "12345",
-    }),
-  },
-  {
-    id: "clawback",
-    title: "Clawback",
-    isMainnetActive: true,
-    build: (ctx) => ({
-      TransactionType: "Clawback",
-      Account: "회수자 주소",
-      Amount: { currency: "회수할 토큰", issuer: "보유자 주소", value: "회수할 수량" },
-    }),
-  },
-  {
-    id: "mp-token-issuance-create",
-    title: "MPTokenIssuanceCreate",
-    isMainnetActive: true,
-    build: (ctx) => ({
-      TransactionType: "MPTokenIssuanceCreate",
-      Account: ctx?.walletAddress ?? "",
-      TokenAmount: "1000000",
-    }),
-  },
-  {
-    id: "mp-token-issuance-destroy",
-    title: "MPTokenIssuanceDestroy",
-    isMainnetActive: true,
-    build: (ctx) => ({
-      TransactionType: "MPTokenIssuanceDestroy",
-      Account: ctx?.walletAddress ?? "",
-      TokenAmount: "1000000",
-    }),
-  },
-  {
-    id: "mp-token-issuance-set",
-    title: "MPTokenIssuanceSet",
-    isMainnetActive: true,
-    build: (ctx) => ({
-      TransactionType: "MPTokenIssuanceSet",
-      Account: ctx?.walletAddress ?? "",
-      TokenAmount: "1000000",
-    }),
-  },
-  {
-    id: "mp-token-authorize",
-    title: "MPTokenAuthorize",
-    isMainnetActive: true,
-    build: (ctx) => ({
-      TransactionType: "MPTokenAuthorize",
-      Account: ctx?.walletAddress ?? "",
-      TokenID: "12345",
-    }),
-  },
+
+  // ─────────────────────────────
+  // DEX (Offer)
+  // ─────────────────────────────
   {
     id: "offercreate-permissioned",
     title: "OfferCreate (Permissioned)",
     isMainnetActive: false,
     build: (ctx) => ({
       TransactionType: "OfferCreate",
-      Account: ctx?.walletAddress ?? "",
-      TakerGets: "10000000",
-      TakerPays: { currency: "USD", value: "50", issuer: "" },
+      Account: "오퍼 제출 계정",
+      TakerGets: { currency: "내주는 자산", issuer: "발행자", value: "수량" },
+      TakerPays: { currency: "받는 자산", issuer: "발행자", value: "수량" },
+      DomainID: "Permissioned DEX 도메인 ID",
+      Expiration: "만료 시각(UNIX) (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -300,9 +277,11 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "OfferCreate",
-      Account: ctx?.walletAddress ?? "",
-      TakerGets: "10000000",
-      TakerPays: { currency: "USD", value: "50", issuer: "" },
+      Account: "오퍼 제출 계정",
+      TakerGets: "XRP drops 문자열 또는 IOU 객체",
+      TakerPays: "XRP drops 문자열 또는 IOU 객체",
+      Expiration: "만료 시각(UNIX) (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -311,20 +290,29 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "OfferCancel",
-      Account: ctx?.walletAddress ?? "",
-      OfferSequence: "12345",
+      Account: "계정 주소",
+      OfferSequence: "취소할 오퍼의 시퀀스",
+      Memos: "메모 배열 (옵션)"
     }),
   },
+
+  // ─────────────────────────────
+  // Escrow
+  // ─────────────────────────────
   {
     id: "escrowcreate-xrp",
     title: "EscrowCreate (XRP)",
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "EscrowCreate",
-      Account: ctx?.walletAddress ?? "",
-      Destination: "",
-      Amount: "5000000",
-      FinishAfter: 800000000,
+      Account: "에스크로 생성 계정",
+      Destination: "수취자 주소",
+      Amount: "XRP drops 문자열",
+      FinishAfter: "해당 시간 이후 완료 가능(UNIX) (옵션)",
+      CancelAfter: "해당 시간 이후 취소 가능(UNIX) (옵션)",
+      Condition: "PREIMAGE-SHA-256 조건(hex) (옵션)",
+      DestinationTag: "수취자 태그 (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -333,10 +321,14 @@ const RECIPES: Recipe[] = [
     isMainnetActive: false,
     build: (ctx) => ({
       TransactionType: "EscrowCreate",
-      Account: ctx?.walletAddress ?? "",
-      Destination: "",
-      Amount: { currency: "USD", value: "5000", issuer: "" },
-      FinishAfter: 800000000,
+      Account: "에스크로 생성 계정",
+      Destination: "수취자 주소",
+      Amount: { currency: "토큰코드", issuer: "발행자 주소", value: "수량" },
+      FinishAfter: "해당 시간 이후 완료 가능(UNIX) (옵션)",
+      CancelAfter: "해당 시간 이후 취소 가능(UNIX) (옵션)",
+      Condition: "PREIMAGE-SHA-256 조건(hex) (옵션)",
+      DestinationTag: "수취자 태그 (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -345,10 +337,14 @@ const RECIPES: Recipe[] = [
     isMainnetActive: false,
     build: (ctx) => ({
       TransactionType: "EscrowCreate",
-      Account: ctx?.walletAddress ?? "",
-      Destination: "",
-      Amount: { currency: "USD", value: "5000", issuer: "" },
-      FinishAfter: 800000000,
+      Account: "에스크로 생성 계정",
+      Destination: "수취자 주소",
+      Amount: { currency: "MPT코드", issuer: "발행자 주소", value: "수량" },
+      FinishAfter: "해당 시간 이후 완료 가능(UNIX) (옵션)",
+      CancelAfter: "해당 시간 이후 취소 가능(UNIX) (옵션)",
+      Condition: "PREIMAGE-SHA-256 조건(hex) (옵션)",
+      DestinationTag: "수취자 태그 (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -357,9 +353,12 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "EscrowFinish",
-      Account: ctx?.walletAddress ?? "",
-      Owner: "",
-      OfferSequence: "12345",
+      Account: "완료 트랜잭션 제출 계정",
+      Owner: "EscrowCreate를 보낸 계정 주소",
+      OfferSequence: "EscrowCreate 시퀀스",
+      Fulfillment: "조건 충족 Proof(hex) (옵션)",
+      Condition: "조건(hex) (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -368,31 +367,41 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "EscrowCancel",
-      Account: ctx?.walletAddress ?? "",
-      Owner: "",
-      OfferSequence: "12345",
+      Account: "취소 트랜잭션 제출 계정",
+      Owner: "EscrowCreate를 보낸 계정 주소",
+      OfferSequence: "EscrowCreate 시퀀스",
+      Memos: "메모 배열 (옵션)"
     }),
   },
+
+  // ─────────────────────────────
+  // Batch
+  // ─────────────────────────────
   {
     id: "batch",
     title: "Batch",
     isMainnetActive: false,
     build: (ctx) => ({
       TransactionType: "Batch",
-      Account: ctx?.walletAddress ?? "",
-      Transactions: [],
+      Transactions: "내부 트랜잭션 배열 (각 내부 트랜잭션에 tfInnerBatchTxn(0x40000000) 플래그 설정정 필요)",
+      Flags: "tfAllOrNothing / tfOnlyOne / tfUntilFailure / tfIndependent 중 선택 (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
+  // ─────────────────────────────
+  // AMM
+  // ─────────────────────────────
   {
     id: "ammcreate",
     title: "AMMCreate",
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "AMMCreate",
-      Account: ctx?.walletAddress ?? "",
-      Asset: { currency: "XRP" },
-      Amount: "1000000",
-      Flags: 0,
+      Account: "풀 생성 계정",
+      Amount: { currency: "자산1", issuer: "발행자1", value: "예치 수량" },
+      Amount2: { currency: "자산2", issuer: "발행자2", value: "예치 수량" },
+      TradingFee: "거래 수수료(0~1000, 1=0.01%) (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -401,10 +410,13 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "AMMDeposit",
-      Account: ctx?.walletAddress ?? "",
-      Asset: { currency: "XRP" },
-      Amount: "1000000",
-      Flags: 0,
+      Account: "예치하는 계정",
+      Asset: { currency: "자산1", issuer: "발행자1" },
+      Asset2: { currency: "자산2", issuer: "발행자2" },
+      Amount: { currency: "자산1", issuer: "발행자1", value: "예치 수량 (옵션)" },
+      Amount2: { currency: "자산2", issuer: "발행자2", value: "예치 수량 (옵션)" },
+      LPTokenOut: { currency: "LP 토큰", issuer: "AMM LP 발행자", value: "받고자 하는 LP 수량 (옵션)" },
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -413,9 +425,13 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "AMMWithdraw",
-      Account: ctx?.walletAddress ?? "",
-      Asset: { currency: "XRP" },
-      Amount: "1000000",
+      Account: "인출하는 계정",
+      Asset: { currency: "자산1", issuer: "발행자1" },
+      Asset2: { currency: "자산2", issuer: "발행자2" },
+      LPTokenIn: { currency: "LP 토큰", issuer: "AMM LP 발행자", value: "소각할 LP 수량 (옵션)" },
+      Amount: { currency: "자산1", issuer: "발행자1", value: "인출 수량 (옵션)" },
+      Amount2: { currency: "자산2", issuer: "발행자2", value: "인출 수량 (옵션)" },
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -424,183 +440,464 @@ const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "AMMDelete",
-      Account: ctx?.walletAddress ?? "",
-      Asset: { currency: "XRP" },
-      Amount: "1000000",
+      Account: "풀 삭제 트랜잭션 제출 계정",
+      Asset: { currency: "자산1", issuer: "발행자1" },
+      Asset2: { currency: "자산2", issuer: "발행자2" },
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "amm-bid",
+    id: "ammbid",
     title: "AMMBid",
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "AMMBid",
-      Account: ctx?.walletAddress ?? "",
-      Amount: "1000000",
+      Account: "입찰 계정",
+      Asset: { currency: "자산1", issuer: "발행자1" },
+      Asset2: { currency: "자산2", issuer: "발행자2" },
+      BidMin: { currency: "입찰 자산", issuer: "발행자", value: "최소 수량 (옵션)" },
+      BidMax: { currency: "입찰 자산", issuer: "발행자", value: "최대 수량 (옵션)" },
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "amm-vote",
+    id: "ammvote",
     title: "AMMVote",
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "AMMVote",
-      Account: ctx?.walletAddress ?? "",
-      Vote: "Yes",
+      Account: "투표 계정",
+      Asset: { currency: "자산1", issuer: "발행자1" },
+      Asset2: { currency: "자산2", issuer: "발행자2" },
+      TradingFee: "제안/투표할 거래 수수료(0~1000, 1=0.01%)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "amm-clawback",
+    id: "ammclawback",
     title: "AMMClawback",
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "AMMClawback",
-      Account: ctx?.walletAddress ?? "",
-      Amount: "1000000",
+      Account: "발행자(회수 주체) 주소",
+      Asset: { currency: "자산1", issuer: "발행자1" },
+      Asset2: { currency: "자산2", issuer: "발행자2" },
+      Holder: "회수 대상 보유자 주소",
+      Amount: { currency: "회수할 자산", issuer: "발행자1 또는 2", value: "수량" },
+      Memos: "메모 배열 (옵션)"
     }),
   },
+
+  // ─────────────────────────────
+  // Credentials
+  // ─────────────────────────────
   {
-    id: "nftmint",
-    title: "NFTokenMint",
+    id: "credentialcreate",
+    title: "CredentialCreate",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "NFTokenMint",
-      Account: ctx?.walletAddress ?? "",
-      URI: Buffer.from("ipfs://Qm...").toString("hex"),
-      NFTokenTaxon: 0,
+      TransactionType: "CredentialCreate",
+      Account: "발급자(issuer) 주소",
+      Subject: "피발급자(subject) 주소",
+      CredentialType: "자격증명 유형",
+      URI: "관련 문서/레지스트리 URI (옵션)",
+      Expiration: "만료 시각(UNIX) (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "nfTokenburn",
-    title: "NFTokenBurn",
+    id: "credentialaccept",
+    title: "CredentialAccept",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "NFTokenBurn",
-      Account: ctx?.walletAddress ?? "",
-      NFTokenID: "12345",
+      TransactionType: "CredentialAccept",
+      Account: "수령자(holder) 주소",
+      Issuer: "발급자 주소",
+      CredentialType: "자격증명 유형",
+      URI: "관련 문서/레지스트리 URI (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "nfTokencreateoffer",
-    title: "NFTokenCreateOffer",
+    id: "credentialdelete",
+    title: "CredentialDelete",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "NFTokenCreateOffer",
-      Account: ctx?.walletAddress ?? "",
-      NFTokenID: "12345",
-      TakerGets: "1000000",
-      TakerPays: { currency: "USD", value: "50", issuer: "" },
+      TransactionType: "CredentialDelete",
+      Account: "삭제 요청자 주소(일반적으로 발급자)",
+      Subject: "피발급자(subject) 주소",
+      CredentialType: "자격증명 유형",
+      Memos: "메모 배열 (옵션)"
     }),
   },
+
+  // ─────────────────────────────
+  // Checks
+  // ─────────────────────────────
   {
-    id: "nfTokenacceptoffer",
-    title: "NFTokenAcceptOffer",
+    id: "checkcancel",
+    title: "CheckCancel",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "NFTokenAcceptOffer",
-      Account: ctx?.walletAddress ?? "",
-      NFTokenID: "12345",
-      OfferSequence: "12345",
+      TransactionType: "CheckCancel",
+      Account: "체크 취소를 제출할 계정 주소",
+      CheckID: "64자리 체크 ID(헥사)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "nft-cancel-offer",
-    title: "NFTokenCancelOffer",
+    id: "checkcash",
+    title: "CheckCash",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "NFTokenCancelOffer",
-      Account: ctx?.walletAddress ?? "",
-      NFTokenID: "12345",
-      OfferSequence: "67890",
+      TransactionType: "CheckCash",
+      Account: "체크의 Destination(수취자) 주소",
+      CheckID: "64자리 체크 ID(헥사)",
+      Amount: "교환 금액 (XRP drops | IOU 객체) (옵션)",
+      DeliverMin: "최소 수령 금액 (XRP drops | IOU 객체) (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "nfTokenmodify",
-    title: "NFTokenModify",
+    id: "checkcreate",
+    title: "CheckCreate",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "NFTokenModify",
-      Account: ctx?.walletAddress ?? "",
-      NFTokenID: "12345",
-      URI: Buffer.from("ipfs://newUri").toString("hex"),
+      TransactionType: "CheckCreate",
+      Account: "체크 발행자 주소",
+      Destination: "수취자 주소",
+      SendMax: "최대 금액 (XRP drops | IOU 객체)",
+      DestinationTag: "수취자 태그 (옵션)",
+      Expiration: "만료 시각(UNIX) (옵션)",
+      InvoiceID: "64바이트 hex (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
+
+  // ─────────────────────────────
+  // Clawback / DepositPreauth / DID
+  // ─────────────────────────────
   {
-    id: "oracledelete",
-    title: "OracleDelete",
+    id: "clawback",
+    title: "Clawback",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "OracleDelete",
-      Account: ctx?.walletAddress ?? "",
-      OracleID: "12345",
+      TransactionType: "Clawback",
+      Account: "회수자(발행자) 주소",
+      Amount: { currency: "회수할 토큰", issuer: "보유자 주소", value: "회수할 수량" },
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "oracleset",
-    title: "OracleSet",
+    id: "depositpreauth",
+    title: "DepositPreauth",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "OracleSet",
-      Account: ctx?.walletAddress ?? "",
-      OracleID: "12345",
-      Fee: "1000000",
+      TransactionType: "DepositPreauth",
+      Account: "예치 사전승인(DepositAuth) 설정 계정",
+      Authorize: "사전 승인할 계정 주소 (Authorize/Unauthorize 중 택1)",
+      Unauthorize: "사전 승인 해제할 계정 주소 (Authorize/Unauthorize 중 택1)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
-  
   {
-    id: "paymentchannelcreate",
-    title: "PaymentChannelCreate",
+    id: "diddelete",
+    title: "DIDDelete",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "PaymentChannelCreate",
-      Account: ctx?.walletAddress ?? "",
-      Amount: "1000000",
-      Destination: "",
+      TransactionType: "DIDDelete",
+      Account: "DID 소유자 주소",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "paymentchannelfund",
-    title: "PaymentChannelFund",
+    id: "didset",
+    title: "DIDSet",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "PaymentChannelFund",
-      Account: ctx?.walletAddress ?? "",
-      Channel: "12345",
-      Amount: "500000",
+      TransactionType: "DIDSet",
+      Account: "DID 소유자 주소",
+      Data: "임의 데이터(hex) (옵션)",
+      DIDDocument: "DID Document JSON(hex) (옵션)",
+      URI: "hex-encoded URI (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
+  // ─────────────────────────────
+  // MPToken (Issuance / Authorize)
+  // ─────────────────────────────
   {
-    id: "paymentchannelclaim",
-    title: "PaymentChannelClaim",
+    id: "mptokenissuancecreate",
+    title: "MPTokenIssuanceCreate",
     isMainnetActive: true,
     build: (ctx) => ({
-      TransactionType: "PaymentChannelClaim",
-      Account: ctx?.walletAddress ?? "",
-      Channel: "12345",
-      Amount: "1000000",
+      TransactionType: "MPTokenIssuanceCreate",
+      Account: "발행자(issuer) 주소",
+      TokenCode: "MPT 토큰 코드",
+      Decimals: "소수 자리수 (옵션)",
+      TransferFee: "전송 수수료(bps) (옵션)",
+      Flags: "tfMPTCanLock|tfMPTRequireAuth|tfMPTCanEscrow|tfMPTCanTrade|tfMPTCanTransfer|tfMPTCanClawback 중 선택 (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
-  
   {
-    id: "permissioned-domain-set",
+    id: "mptokenissuancedestroy",
+    title: "MPTokenIssuanceDestroy",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "MPTokenIssuanceDestroy",
+      Account: "발행자(issuer) 주소",
+      IssuanceID: "삭제할 발행(issuance) 식별자",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "mptokenissuanceset",
+    title: "MPTokenIssuanceSet",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "MPTokenIssuanceSet",
+      Account: "발행자(issuer) 주소",
+      IssuanceID: "대상 발행(issuance) 식별자",
+      // 잠금/해제는 Flags 비트로 설정
+      Flags: "tfMPTLock 또는 tfMPTUnlock 설정 (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "mptokenauthorize",
+    title: "MPTokenAuthorize",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "MPTokenAuthorize",
+      Account: "제출 계정(보유자 또는 발행자)",
+      Asset: { currency: "MPT 코드", issuer: "발행자 주소" },
+      Holder: "보유자 주소 (발행자가 권한 취소/부여 시 필수) (옵션)",
+      Flags: "tfMPTUnauthorize 설정 시 보유 의사 철회/권한 취소 동작 (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+
+  // ─────────────────────────────
+  // Permissioned DEX Domain
+  // ─────────────────────────────
+  {
+    id: "permissioneddomainset",
     title: "PermissionedDomainSet",
     isMainnetActive: false,
     build: (ctx) => ({
       TransactionType: "PermissionedDomainSet",
-      Account: ctx?.walletAddress ?? "",
-      Domain: "example.com",
+      Account: "도메인 소유자 주소",
+      DomainID: "도메인 식별자",
+      Description: "도메인 설명 (옵션)",
+      Rules: "권한/규칙 JSON (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
-    id: "permissioned-domain-delete",
+    id: "permissioneddomaindelete",
     title: "PermissionedDomainDelete",
     isMainnetActive: false,
     build: (ctx) => ({
       TransactionType: "PermissionedDomainDelete",
-      Account: ctx?.walletAddress ?? "",
-      Domain: "example.com",
+      Account: "도메인 소유자 주소",
+      DomainID: "삭제할 도메인 식별자",
+      Memos: "메모 배열 (옵션)"
     }),
   },
+
+  // ─────────────────────────────
+  // NFTs (XLS-20)
+  // ─────────────────────────────
+  {
+    id: "nftokenacceptoffer",
+    title: "NFTokenAcceptOffer",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "NFTokenAcceptOffer",
+      Account: "수락 트랜잭션 제출 계정",
+      // 둘 중 하나(단일), 또는 둘 다(브로커드 모드)
+      NFTokenBuyOffer: "구매 오퍼 ID (옵션)",
+      NFTokenSellOffer: "판매 오퍼 ID (옵션)",
+      BrokerFee: { currency: "수수료 통화", issuer: "발행자 주소", value: "수수료 수량 (옵션)" },
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "nftokenburn",
+    title: "NFTokenBurn",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "NFTokenBurn",
+      Account: "소각 트랜잭션 제출 계정",
+      NFTokenID: "소각할 NFT ID",
+      Owner: "소유자 주소(타 계정의 NFT 소각 시 필요) (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "nftokencanceloffer",
+    title: "NFTokenCancelOffer",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "NFTokenCancelOffer",
+      Account: "취소 트랜잭션 제출 계정",
+      NFTokenOffers: ["취소할 오퍼 ID들"],
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "nftokencreateoffer",
+    title: "NFTokenCreateOffer",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "NFTokenCreateOffer",
+      Account: "오퍼 생성 계정(판매자 또는 구매자)",
+      NFTokenID: "대상 NFT ID",
+      // 판매 오퍼: Amount는 받으려는 대가 / 구매 오퍼: 구매자가 지불할 금액
+      Amount: "XRP drops | IOU 객체",
+      Owner: "NFT 소유자 주소(구매 오퍼일 때 필요) (옵션)",
+      Destination: "오퍼 수락 가능 계정 제한 (옵션)",
+      Expiration: "만료 시각(UNIX) (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "nftokenmint",
+    title: "NFTokenMint",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "NFTokenMint",
+      Account: "민팅 계정(발행자)",
+      NFTokenTaxon: "분류 번호(0~) (같은 컬렉션 묶음 용도)",
+      URI: "hex-encoded 메타데이터 URI (옵션)",
+      TransferFee: "이차 판매 수수료(bps) (옵션)",
+      Issuer: "대리 발행 시 지정(옵션)",
+      Flags: "tfBurnable|tfOnlyXRP|tfTrustLine|tfTransferable 등 (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "nftokenmodify",
+    title: "NFTokenModify",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "NFTokenModify",
+      Account: "수정 트랜잭션 제출 계정",
+      NFTokenID: "수정할 NFT ID",
+      URI: "새 hex-encoded URI (옵션)",
+      TransferFee: "새 이차 판매 수수료(bps) (옵션)",
+      Flags: "수정 관련 플래그 (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "oracle-delete",
+    title: "OracleDelete",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "OracleDelete",
+      Account: "오라클 소유자 주소",
+      OracleDocumentID: "오라클 문서 ID",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "oracle-set",
+    title: "OracleSet",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "OracleSet",
+      Account: "오라클 소유자 주소",
+      OracleDocumentID: "오라클 문서 ID",
+      LastUpdateTime: "최종 업데이트 시각(UNIX)",
+      PriceDataSeries: "가격 데이터 시리즈 배열",
+      Provider: "프로바이더 식별자(HEX ASCII) (옵션)",
+      AssetClass: "자산 클래스(HEX ASCII) (옵션)",
+      URI: "오라클 메타데이터 URI (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "set-regular-key",
+    title: "SetRegularKey",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "SetRegularKey",
+      Account: "마스터 키 보유 계정 주소",
+      RegularKey: "새 Regular Key 주소 (미설정 시 기존 RegularKey 제거) (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "signer-list-set",
+    title: "SignerListSet",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "SignerListSet",
+      Account: "멀티시그 소유 계정 주소",
+      SignerQuorum: "요구 정족수",
+      SignerEntries: "서명자 엔트리 배열",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "ticket-create",
+    title: "TicketCreate",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "TicketCreate",
+      Account: "티켓 발급 계정 주소",
+      TicketCount: "발급할 티켓 개수",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "payment-channel-claim",
+    title: "PaymentChannelClaim",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "PaymentChannelClaim",
+      Account: "채널 소유자 또는 수신자 주소",
+      Channel: "채널 ID(64바이트 HEX)",
+      Balance: "새 누적 잔액(drops) (옵션)",
+      Amount: "서명된 청구 금액(drops) (옵션)",
+      Signature: "오프레저 청구 서명(HEX) (옵션)",
+      PublicKey: "서명 공개키(HEX) (옵션)",
+      Flags: "tfClose(131072) 또는 tfRenew(65536) (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "payment-channel-create",
+    title: "PaymentChannelCreate",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "PaymentChannelCreate",
+      Account: "채널 개설자(송신자) 주소",
+      Amount: "송금 총액(drops)",
+      Destination: "수신자 주소",
+      SettleDelay: "정산 지연 시간(초)",
+      PublicKey: "송신자 공개키(HEX)",
+      CancelAfter: "만료 시각(UNIX) (옵션)",
+      DestinationTag: "수신자 태그 (옵션)",
+      SourceTag: "송신자 태그 (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "payment-channel-fund",
+    title: "PaymentChannelFund",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "PaymentChannelFund",
+      Account: "채널 소유자 주소",
+      Channel: "채널 ID(64바이트 HEX)",
+      Amount: "추가 펀딩 금액(drops)",
+      Expiration: "만료 시각(UNIX) (옵션)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  }
   
 ];
 // 에러 코드 타입 정의
@@ -930,7 +1227,7 @@ const FLAG_ITEMS: FlagItem[] = [
     {
       id: "tf-payment-no-direct-ripple",
       flag: 65536,
-      title: "tfNoDirectRipple",
+      title: "tfNoRippleDirect",
       description:
         "직접 경로(rippling)를 사용하지 않도록 요청 (hex 0x00010000)",
       detailUrl:
@@ -994,7 +1291,15 @@ const FLAG_ITEMS: FlagItem[] = [
       detailUrl:
         "https://xrpl.org/docs/references/protocol/transactions/types/offercreate"
     },
-  
+    {
+      id: "tf-hybrid",
+      flag: 1048576,
+      title: "tfHybrid",
+      description:
+        "Permissioned DEX와 오픈 DEX를 모두 사용하는 하이브리드 오퍼로 생성. 이 플래그 사용 시 DomainID 필드가 필수. (PermissionedDEX amendment 필요, 현재 메인넷 미활성 / hex 0x00100000)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/offercreate"
+    },
     // ─────────────────────────────────────────────
     // TrustSet (type-based flags)
     // ─────────────────────────────────────────────
@@ -1194,6 +1499,15 @@ const FLAG_ITEMS: FlagItem[] = [
       detailUrl:
         "https://xrpl.org/docs/references/protocol/transactions/types/ammwithdraw"
     },
+    {
+      id: "tf-claw-two-assets",
+      flag: 1,
+      title: "tfClawTwoAssets",
+      description:
+        "지정한 Asset 금액과, AMM 풀의 자산 비율에 따른 대응 Asset2 금액을 함께 회수(두 자산 모두 Account 필드의 발행자가 발행한 자산이어야 함). 이 플래그를 사용하지 않으면 지정한 Asset만 회수되고, 해당 비율의 Asset2는 Holder에게 반환됨 (hex 0x00000001)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/ammclawback"
+    },
   
     // ─────────────────────────────────────────────
     // NFTokenMint / NFTokenCreateOffer (type-based flags)
@@ -1226,7 +1540,7 @@ const FLAG_ITEMS: FlagItem[] = [
       id: "tf-nftmint-transferable",
       flag: 8,
       title: "tfTransferable",
-      description: "소유권 이전 허용",
+      description: "NFT 소유권 이전 허용",
       detailUrl:
         "https://xrpl.org/docs/references/protocol/transactions/types/nftokenmint"
     },
@@ -1234,7 +1548,7 @@ const FLAG_ITEMS: FlagItem[] = [
       id: "tf-nftmint-mutable",
       flag: 16,
       title: "tfMutable",
-      description: "발행 후 메타데이터 수정 허용",
+      description: "NFT 발행 후 메타데이터 수정 허용",
       detailUrl:
         "https://xrpl.org/docs/references/protocol/transactions/types/nftokenmint"
     },
@@ -1245,6 +1559,140 @@ const FLAG_ITEMS: FlagItem[] = [
       description: "판매 오퍼로 해석(미설정 시 구매 오퍼)",
       detailUrl:
         "https://xrpl.org/docs/references/protocol/transactions/types/nftokencreateoffer"
+    },
+    // ─────────────────────────────────────────────
+    // Transaction Flags (tf*) 
+    // ─────────────────────────────────────────────
+    // MPtokenIssuance/Authorize/Set tf
+    {
+      id: "tf-mpt-can-lock",
+      flag: 2,
+      title: "tfMPTCanLock",
+      description:
+        "개별 및 글로벌 잠금(LOCK) 허용 (hex 0x00000002)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuancecreate"
+    },
+    {
+      id: "tf-mpt-require-auth",
+      flag: 4,
+      title: "tfMPTRequireAuth",
+      description:
+        "개별 보유자 승인(Authorization) 필요 (hex 0x00000004)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuancecreate"
+    },
+    {
+      id: "tf-mpt-can-escrow",
+      flag: 8,
+      title: "tfMPTCanEscrow",
+      description:
+        "보유 잔액을 에스크로(escrow)로 예치 가능 (hex 0x00000008)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuancecreate"
+    },
+    {
+      id: "tf-mpt-can-trade",
+      flag: 16,
+      title: "tfMPTCanTrade",
+      description:
+        "XRPL DEX에서 보유 잔액 거래 가능 (hex 0x00000010)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuancecreate"
+    },
+    {
+      id: "tf-mpt-can-transfer",
+      flag: 32,
+      title: "tfMPTCanTransfer",
+      description:
+        "발행자가 아닌 다른 계정으로 토큰 전송 가능 (hex 0x00000020)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuancecreate"
+    },
+    {
+      id: "tf-mpt-can-clawback",
+      flag: 64,
+      title: "tfMPTCanClawback",
+      description:
+        "발행자가 Clawback 트랜잭션으로 개별 보유자 잔액 회수 가능 (hex 0x00000040)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuancecreate"
+    },
+    {
+      id: "tf-mpt-unauthorize",
+      flag: 1,
+      title: "tfMPTUnauthorize",
+      description:
+        "보유자: 잔액이 0이면 해당 MPT 보유 의사 철회 및 MPToken 엔트리 삭제(잔액>0이면 실패). 발행자: 지정 보유자의 보유 권한 취소(해당 MPT가 allow-listing을 사용하지 않으면 실패). (hex 0x00000001)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/mptokenauthorize"
+    },
+    {
+      id: "tf-mpt-lock",
+      flag: 1,
+      title: "tfMPTLock",
+      description:
+        "해당 MPT 발행분의 잔액을 잠금(lock) 처리 (hex 0x00000001)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuanceset"
+    },
+    {
+      id: "tf-mpt-unlock",
+      flag: 2,
+      title: "tfMPTUnlock",
+      description:
+        "해당 MPT 발행분의 잔액 잠금 해제(unlock) (hex 0x00000002)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuanceset"
+    },
+    // ─────────────────────────────────────────────
+    // Transaction Flags (tf*) 
+    // ─────────────────────────────────────────────
+    // Batch tf
+    {
+      id: "tf-all-or-nothing",
+      flag: 65536,
+      title: "tfAllOrNothing",
+      description:
+        "모든 트랜잭션이 성공해야 하며 하나라도 실패하면 전체 배치가 실패 (hex 0x00010000)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
+    },
+    {
+      id: "tf-only-one",
+      flag: 131072,
+      title: "tfOnlyOne",
+      description:
+        "가장 먼저 성공한 트랜잭션만 적용되고 이후 트랜잭션은 실패하거나 건너뜀 (hex 0x00020000)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
+    },
+    {
+      id: "tf-until-failure",
+      flag: 262144,
+      title: "tfUntilFailure",
+      description:
+        "첫 실패가 발생할 때까지 순서대로 적용하며 이후 트랜잭션은 건너뜀 (hex 0x00040000)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
+    },
+    {
+      id: "tf-independent",
+      flag: 524288,
+      title: "tfIndependent",
+      description:
+        "실패 여부와 무관하게 모든 트랜잭션을 적용 (hex 0x00080000)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
+    },
+    {
+      id: "tf-inner-batch-txn",
+      flag: 1073741824,
+      title: "tfInnerBatchTxn",
+      description:
+        "해당 트랜잭션이 Batch 트랜잭션 내부에 있음을 표시. Batch 기능 사용 시 모든 내부 트랜잭션에 이 플래그를 설정해야 함 (hex 0x40000000)",
+      detailUrl:
+        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
     },
     // ─────────────────────────────────────────────
     // Ledger Flags (lsf*) — AccountRoot / Offer / RippleState
@@ -1495,7 +1943,7 @@ const FLAG_ITEMS: FlagItem[] = [
         "https://js.xrpl.org/enums/LedgerEntry.RippleStateFlags.html"
     }
   ];
-  
+
 // 에러 코드 Docs 링크
 const XRPL_DOCS_BASE = {
   tec: "https://xrpl.org/docs/references/protocol/transactions/transaction-results/tec-codes",
@@ -1585,49 +2033,59 @@ const DEV_LINKS: DevLink[] = [
 ];
 
 const txLink: TxLink[]= [
-  { title: "Payment (XRP)", jsref: "https://js.xrpl.org/interfaces/Payment.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Payment", docref: "https://catalyze-research.notion.site/Payment-XRP-2a2898c680bf80e78109d8cb05ab044b?source=copy_link"},
-  { title: "Payment (IOU)", jsref: "https://js.xrpl.org/interfaces/Payment.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Payment" , docref: ""},
-  { title: "Payment (MPT)", jsref: "https://js.xrpl.org/interfaces/Payment.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Payment" , docref: ""},
-  { title: "Payment (AMM Swap)", jsref: "https://js.xrpl.org/interfaces/Payment.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Payment" , docref: ""},
-  { title: "AccountSet", jsref: "https://js.xrpl.org/interfaces/AccountSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AccountSet" , docref: ""},
-  { title: "TrustSet", jsref: "https://js.xrpl.org/interfaces/TrustSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.TrustSet" , docref: ""},
-  { title: "OfferCreate (Permissioned)", jsref: "https://js.xrpl.org/interfaces/OfferCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OfferCreate" , docref: ""},
-  { title: "OfferCreate (General)", jsref: "https://js.xrpl.org/interfaces/OfferCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OfferCreate" , docref: ""},
-  { title: "OfferCancel", jsref: "https://js.xrpl.org/interfaces/OfferCancel.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OfferCancel" , docref: ""},
-  { title: "EscrowCreate (XRP)", jsref: "https://js.xrpl.org/interfaces/EscrowCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowCreate" , docref: ""},
-  { title: "EscrowCreate (IOU)", jsref: "https://js.xrpl.org/interfaces/EscrowCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowCreate" , docref: ""},
-  { title: "EscrowCreate (MPT)", jsref: "https://js.xrpl.org/interfaces/EscrowCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowCreate" , docref: ""}, 
-  { title: "EscrowFinish", jsref: "https://js.xrpl.org/interfaces/EscrowFinish.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowFinish" , docref: ""},
-  { title: "EscrowCancel", jsref: "https://js.xrpl.org/interfaces/EscrowCancel.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowCancel" , docref: ""},
-  { title: "Batch", jsref: "https://js.xrpl.org/interfaces/Batch.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Batch" , docref: ""},
-  { title: "AMMCreate", jsref: "https://js.xrpl.org/interfaces/AMMCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMCreate" , docref: ""},
-  { title: "AMMDeposit", jsref: "https://js.xrpl.org/interfaces/AMMDeposit.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMDeposit", docref: "" },
-  { title: "AMMWithdraw", jsref: "https://js.xrpl.org/interfaces/AMMWithdraw.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMWithdraw", docref: "" },
-  { title: "AMMDelete", jsref: "https://js.xrpl.org/interfaces/AMMDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMDelete", docref: "" },
-  { title: "AMMBid", jsref: "https://js.xrpl.org/interfaces/AMMBid.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMBid", docref: "" },
-  { title: "AMMVote", jsref: "https://js.xrpl.org/interfaces/AMMVote.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMVote", docref: "" },
-  { title: "AMMClawback", jsref: "https://js.xrpl.org/interfaces/AMMClawback.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMClawback", docref: "" },
-  { title: "CredentialCreate", jsref: "https://js.xrpl.org/interfaces/CredentialCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.CredentialCreate", docref: "" },
-  { title: "CredentialAccept", jsref: "https://js.xrpl.org/interfaces/CredentialAccept.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.CredentialAccept", docref: "" },
-  { title: "CredentialDelete", jsref: "https://js.xrpl.org/interfaces/CredentialDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.CredentialDelete", docref: "" },
-  { title: "Clawback", jsref: "https://js.xrpl.org/interfaces/Clawback.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Clawback", docref: "" },
-  { title: "MPTokenIssuanceCreate", jsref: "https://js.xrpl.org/interfaces/MPTokenIssuanceCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.MPTokenIssuanceCreate", docref: "" },
-  { title: "MPTokenIssuanceDestroy", jsref: "https://js.xrpl.org/interfaces/MPTokenIssuanceDestroy.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.MPTokenIssuanceDestroy", docref: "" },
-  { title: "MPTokenIssuanceSet", jsref: "https://js.xrpl.org/interfaces/MPTokenIssuanceSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.MPTokenIssuanceSet", docref: "" },
-  { title: "MPTokenAuthorize", jsref: "https://js.xrpl.org/interfaces/MPTokenAuthorize.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.MPTokenAuthorize", docref: "" },
-  { title: "PermissionedDomainSet", jsref: "https://js.xrpl.org/interfaces/PermissionedDomainSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PermissionedDomainSet", docref: "" },
-  { title: "PermissionedDomainDelete", jsref: "https://js.xrpl.org/interfaces/PermissionedDomainDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PermissionedDomainDelete", docref: "" },
-  { title: "NFTokenAcceptOffer", jsref: "https://js.xrpl.org/interfaces/NFTokenAcceptOffer.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenAcceptOffer", docref: "" },
-  { title: "NFTokenBurn", jsref: "https://js.xrpl.org/interfaces/NFTokenBurn.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenBurn", docref: "" },
-  { title: "NFTokenCancelOffer", jsref: "https://js.xrpl.org/interfaces/NFTokenCancelOffer.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenCancelOffer", docref: "" },
-  { title: "NFTokenCreateOffer", jsref: "https://js.xrpl.org/interfaces/NFTokenCreateOffer.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenCreateOffer", docref: "" },
-  { title: "NFTokenMint", jsref: "https://js.xrpl.org/interfaces/NFTokenMint.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenMint", docref: "" },
-  { title: "NFTokenModify", jsref: "https://js.xrpl.org/interfaces/NFTokenModify.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenModify", docref: "" },
-  { title: "OracleDelete", jsref: "https://js.xrpl.org/interfaces/OracleDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OracleDelete", docref: "" },
-  { title: "OracleSet", jsref: "https://js.xrpl.org/interfaces/OracleSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OracleSet", docref: "" },
-  { title: "PaymentChannelClaim", jsref: "https://js.xrpl.org/interfaces/PaymentChannelClaim.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PaymentChannelClaim", docref: "" },
-  { title: "PaymentChannelCreate", jsref: "https://js.xrpl.org/interfaces/PaymentChannelCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PaymentChannelCreate", docref: "" },
-  { title: "PaymentChannelFund", jsref: "https://js.xrpl.org/interfaces/PaymentChannelFund.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PaymentChannelFund", docref: "" }
+  { title: "Payment (XRP)", jsref: "https://js.xrpl.org/interfaces/Payment.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Payment", docref: "https://xrpl.org/docs/references/protocol/transactions/types/payment"},
+  { title: "Payment (IOU)", jsref: "https://js.xrpl.org/interfaces/Payment.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Payment" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/payment"},
+  { title: "Payment (MPT)", jsref: "https://js.xrpl.org/interfaces/Payment.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Payment" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/payment"},
+  { title: "Payment (AMM Swap)", jsref: "https://js.xrpl.org/interfaces/Payment.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Payment" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/payment"},
+  { title: "AccountSet", jsref: "https://js.xrpl.org/interfaces/AccountSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AccountSet" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/accountset"},
+  { title: "AccountDelete", jsref: "https://js.xrpl.org/interfaces/AccountDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AccountDelete" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/accountdelete"},
+  { title: "TrustSet", jsref: "https://js.xrpl.org/interfaces/TrustSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.TrustSet" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/trustset"},
+  { title: "OfferCreate (Permissioned)", jsref: "https://js.xrpl.org/interfaces/OfferCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OfferCreate" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/offercreate"},
+  { title: "OfferCreate (General)", jsref: "https://js.xrpl.org/interfaces/OfferCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OfferCreate" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/offercreate"},
+  { title: "OfferCancel", jsref: "https://js.xrpl.org/interfaces/OfferCancel.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OfferCancel" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/offercancel"},
+  { title: "EscrowCreate (XRP)", jsref: "https://js.xrpl.org/interfaces/EscrowCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowCreate" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/escrowcreate"},
+  { title: "EscrowCreate (IOU)", jsref: "https://js.xrpl.org/interfaces/EscrowCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowCreate" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/escrowcreate"},
+  { title: "EscrowCreate (MPT)", jsref: "https://js.xrpl.org/interfaces/EscrowCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowCreate" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/escrowcreate"}, 
+  { title: "EscrowFinish", jsref: "https://js.xrpl.org/interfaces/EscrowFinish.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowFinish" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/escrowfinish"},
+  { title: "EscrowCancel", jsref: "https://js.xrpl.org/interfaces/EscrowCancel.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowCancel" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/escrowcancel"},
+  { title: "Batch", jsref: "https://js.xrpl.org/interfaces/Batch.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Batch" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/batch"},
+  { title: "AMMCreate", jsref: "https://js.xrpl.org/interfaces/AMMCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMCreate" , docref: "https://xrpl.org/docs/references/protocol/transactions/types/ammcreate"},
+  { title: "AMMDeposit", jsref: "https://js.xrpl.org/interfaces/AMMDeposit.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMDeposit", docref: "https://xrpl.org/docs/references/protocol/transactions/types/ammdeposit" },
+  { title: "AMMWithdraw", jsref: "https://js.xrpl.org/interfaces/AMMWithdraw.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMWithdraw", docref: "https://xrpl.org/docs/references/protocol/transactions/types/ammwithdraw" },
+  { title: "AMMDelete", jsref: "https://js.xrpl.org/interfaces/AMMDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMDelete", docref: "https://xrpl.org/docs/references/protocol/transactions/types/ammdelete" },
+  { title: "AMMBid", jsref: "https://js.xrpl.org/interfaces/AMMBid.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMBid", docref: "https://xrpl.org/docs/references/protocol/transactions/types/ammbid" },
+  { title: "AMMVote", jsref: "https://js.xrpl.org/interfaces/AMMVote.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMVote", docref: "https://xrpl.org/docs/references/protocol/transactions/types/ammvote" },
+  { title: "AMMClawback", jsref: "https://js.xrpl.org/interfaces/AMMClawback.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.AMMClawback", docref: "https://xrpl.org/docs/references/protocol/transactions/types/ammclawback" },
+  { title: "CredentialCreate", jsref: "https://js.xrpl.org/interfaces/CredentialCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.CredentialCreate", docref: "https://xrpl.org/docs/references/protocol/transactions/types/credentialcreate" },
+  { title: "CredentialAccept", jsref: "https://js.xrpl.org/interfaces/CredentialAccept.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.CredentialAccept", docref: "https://xrpl.org/docs/references/protocol/transactions/types/credentialaccept" },
+  { title: "CredentialDelete", jsref: "https://js.xrpl.org/interfaces/CredentialDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.CredentialDelete", docref: "https://xrpl.org/docs/references/protocol/transactions/types/credentialdelete" },
+  { title: "CheckCancel", jsref: "https://js.xrpl.org/interfaces/CheckCancel.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.CheckCancel", docref: "https://xrpl.org/docs/references/protocol/transactions/types/checkcancel" },
+  { title: "CheckCash", jsref: "https://js.xrpl.org/interfaces/CheckCash.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.CheckCash", docref: "https://xrpl.org/docs/references/protocol/transactions/types/checkcash" },
+  { title: "CheckCreate", jsref: "https://js.xrpl.org/interfaces/CheckCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.CheckCreate", docref: "https://xrpl.org/docs/references/protocol/transactions/types/checkcreate" },
+  { title: "Clawback", jsref: "https://js.xrpl.org/interfaces/Clawback.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Clawback", docref: "https://xrpl.org/docs/references/protocol/transactions/types/clawback" },
+  { title: "DepositPreauth", jsref: "https://js.xrpl.org/interfaces/DepositPreauth.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.DepositPreauth", docref: "https://xrpl.org/docs/references/protocol/transactions/types/depositpreauth" },
+  { title: "DIDDelete", jsref: "https://js.xrpl.org/interfaces/DIDDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.DIDDelete", docref: "https://xrpl.org/docs/references/protocol/transactions/types/diddelete" },
+  { title: "DIDSet", jsref: "https://js.xrpl.org/interfaces/DIDSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.DIDSet", docref: "https://xrpl.org/docs/references/protocol/transactions/types/didset" },
+  { title: "MPTokenIssuanceCreate", jsref: "https://js.xrpl.org/interfaces/MPTokenIssuanceCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.MPTokenIssuanceCreate", docref: "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuancecreate" },
+  { title: "MPTokenIssuanceDestroy", jsref: "https://js.xrpl.org/interfaces/MPTokenIssuanceDestroy.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.MPTokenIssuanceDestroy", docref: "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuancedestroy" },
+  { title: "MPTokenIssuanceSet", jsref: "https://js.xrpl.org/interfaces/MPTokenIssuanceSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.MPTokenIssuanceSet", docref: "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuanceset" },
+  { title: "MPTokenAuthorize", jsref: "https://js.xrpl.org/interfaces/MPTokenAuthorize.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.MPTokenAuthorize", docref: "https://xrpl.org/docs/references/protocol/transactions/types/mptokenauthorize" },
+  { title: "PermissionedDomainSet", jsref: "https://js.xrpl.org/interfaces/PermissionedDomainSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PermissionedDomainSet", docref: "https://xrpl.org/docs/references/protocol/transactions/types/permissioneddomainset" },
+  { title: "PermissionedDomainDelete", jsref: "https://js.xrpl.org/interfaces/PermissionedDomainDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PermissionedDomainDelete", docref: "https://xrpl.org/docs/references/protocol/transactions/types/permissioneddomaindelete" },
+  { title: "NFTokenAcceptOffer", jsref: "https://js.xrpl.org/interfaces/NFTokenAcceptOffer.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenAcceptOffer", docref: "https://xrpl.org/docs/references/protocol/transactions/types/nftokenacceptoffer" },
+  { title: "NFTokenBurn", jsref: "https://js.xrpl.org/interfaces/NFTokenBurn.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenBurn", docref: "https://xrpl.org/docs/references/protocol/transactions/types/nftokenburn" },
+  { title: "NFTokenCancelOffer", jsref: "https://js.xrpl.org/interfaces/NFTokenCancelOffer.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenCancelOffer", docref: "https://xrpl.org/docs/references/protocol/transactions/types/nftokencanceloffer" },
+  { title: "NFTokenCreateOffer", jsref: "https://js.xrpl.org/interfaces/NFTokenCreateOffer.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenCreateOffer", docref: "https://xrpl.org/docs/references/protocol/transactions/types/nftokencreateoffer" },
+  { title: "NFTokenMint", jsref: "https://js.xrpl.org/interfaces/NFTokenMint.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenMint", docref: "https://xrpl.org/docs/references/protocol/transactions/types/nftokenmint" },
+  { title: "NFTokenModify", jsref: "https://js.xrpl.org/interfaces/NFTokenModify.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.NFTokenModify", docref: "https://xrpl.org/docs/references/protocol/transactions/types/nftokenmodify" },
+  { title: "OracleDelete", jsref: "https://js.xrpl.org/interfaces/OracleDelete.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OracleDelete", docref: "https://xrpl.org/docs/references/protocol/transactions/types/oracledelete" },
+  { title: "OracleSet", jsref: "https://js.xrpl.org/interfaces/OracleSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.OracleSet", docref: "https://xrpl.org/docs/references/protocol/transactions/types/oracleset" },
+  { title: "SetRegularKey", jsref: "https://js.xrpl.org/interfaces/SetRegularKey.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.SetRegularKey", docref: "https://xrpl.org/docs/references/protocol/transactions/types/setregularkey" },
+  { title: "SignerListSet", jsref: "https://js.xrpl.org/interfaces/SignerListSet.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.SignerListSet", docref: "https://xrpl.org/docs/references/protocol/transactions/types/signerlistset" },
+  { title: "TicketCreate", jsref: "https://js.xrpl.org/interfaces/TicketCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.TicketCreate", docref: "https://xrpl.org/docs/references/protocol/transactions/types/ticketcreate" },
+  { title: "PaymentChannelClaim", jsref: "https://js.xrpl.org/interfaces/PaymentChannelClaim.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PaymentChannelClaim", docref: "https://xrpl.org/docs/references/protocol/transactions/types/paymentchannelclaim" },
+  { title: "PaymentChannelCreate", jsref: "https://js.xrpl.org/interfaces/PaymentChannelCreate.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PaymentChannelCreate", docref: "https://xrpl.org/docs/references/protocol/transactions/types/paymentchannelcreate" },
+  { title: "PaymentChannelFund", jsref: "https://js.xrpl.org/interfaces/PaymentChannelFund.html", pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.PaymentChannelFund", docref: "https://xrpl.org/docs/references/protocol/transactions/types/paymentchannelfund" }
 ];
 
 // 재사용 모달
@@ -1876,7 +2334,10 @@ export default function Sidebar({ open, onClose, onInsertTx, context }: SidebarP
         ※ 2025/11/11: 사이드바 상단 사용법 및 Tx Library, Error Codes, Flags 메뉴 팝업에 툴팁 오버레이 추가, (Markdown 형식의 가이드 팝업)
         </p>
         <p className="mt-2 text-sm text-white/80">
-          ※ 향후 개선사항: Girin Wallet 연결 모달 구현, UI 개선, Transaction History 설명 문서 추가, Sidebar.tsx/Recipe 상세 업데이트
+        ※ 2025/11/12: Tx Library 개선: Insert되는 트랜잭션 json 내부 한글 설명 추가, 해당 트랜잭션에 대한 xrpl.org(공식 docs 링크) 버튼 추가. Transaction History 모달에서 Hash 클릭 시 연결된 네트워크의 XRPL Explorer로 이동
+        </p>
+        <p className="mt-2 text-sm text-white/80">
+          ※ 향후 개선사항: Girin Wallet 연결 모달 구현, UI 개선, Transaction History 설명 문서 추가
         </p>
         
       </Modal>
@@ -2196,7 +2657,7 @@ export default function Sidebar({ open, onClose, onInsertTx, context }: SidebarP
                       rel="noreferrer"
                       className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold hover:bg-white/25"
                     >
-                      <span>설명</span>
+                      <span>xrpl.org docs</span>
                     </a>
                   ) : (
                     <button

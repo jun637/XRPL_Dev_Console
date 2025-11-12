@@ -83,6 +83,18 @@ interface AccountTransactionEntry {
 
 const networkList = Object.values(NETWORKS);
 
+if (process.env.NODE_ENV !== "production") {
+  // Helps verify that NEXT_PUBLIC_BASE_PATH is injected correctly during builds.
+  // eslint-disable-next-line no-console
+  console.log("[XRPL Dev Console] basePath:", process.env.NEXT_PUBLIC_BASE_PATH);
+}
+
+const NETWORK_EXPLORER_BASES: Record<NetworkKey, string> = {
+  mainnet: "https://livenet.xrpl.org/transactions",
+  testnet: "https://testnet.xrpl.org/transactions",
+  devnet: "https://devnet.xrpl.org/transactions",
+};
+
 const defaultTxTemplate = `{
   "TransactionType": "TrustSet",
   "Account": "",
@@ -492,6 +504,7 @@ export default function Home(): JSX.Element {
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("connecting");
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const explorerBaseUrl = NETWORK_EXPLORER_BASES[network];
   const clientRef = useRef<Client | null>(null);
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -2235,7 +2248,18 @@ export default function Home(): JSX.Element {
                           </p>
                           <p className="text-sm text-white">
                             <span className="font-semibold">Hash:</span>{" "}
-                            <span className="break-all font-mono text-white/80">{entry.hash ?? "-"}</span>
+                            {entry.hash && explorerBaseUrl ? (
+                              <a
+                                href={`${explorerBaseUrl}/${entry.hash}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="break-all font-mono text-[#D4FF9A] underline-offset-2 hover:underline"
+                              >
+                                {entry.hash}
+                              </a>
+                            ) : (
+                              <span className="break-all font-mono text-white/80">{entry.hash ?? "-"}</span>
+                            )}
                           </p>
                         </div>
 
