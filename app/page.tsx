@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import Image from "next/image";
-import '../app/globals.css';
+import ReactMarkdown from "react-markdown";
+import "../app/globals.css";
 import type { JSX } from "react";
 import {
   useCallback,
@@ -10,6 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { WalletConnectModalSign } from "@walletconnect/modal-sign-react";
 import {
   Client,
   Wallet,
@@ -31,6 +33,8 @@ import {
   type NetworkConfig,
   type NetworkKey,
 } from "@/lib/xrpl/constants";
+import { useGirinWallet } from "@/hooks/useGirinWallet";
+import { GIRIN_METADATA } from "@/lib/girin/constants";
 import { withBasePath } from "@/lib/utils/basePath";
 import { parseTxJsonInput, TxJsonParseError } from "@/lib/xrpl/parseTx";
 import Sidebar from "../components/Sidebar";
@@ -81,11 +85,17 @@ interface AccountTransactionEntry {
   date: number | null;
 }
 
+type MarkdownContentState = {
+  content: string;
+  loading: boolean;
+  error: string | null;
+};
+
 const networkList = Object.values(NETWORKS);
+const walletConnectProjectId = process.env.NEXT_PUBLIC_PROJECT_ID?.trim();
 
 if (process.env.NODE_ENV !== "production") {
   // Helps verify that NEXT_PUBLIC_BASE_PATH is injected correctly during builds.
-  // eslint-disable-next-line no-console
   console.log("[XRPL Dev Console] basePath:", process.env.NEXT_PUBLIC_BASE_PATH);
 }
 
@@ -93,6 +103,49 @@ const NETWORK_EXPLORER_BASES: Record<NetworkKey, string> = {
   mainnet: "https://livenet.xrpl.org/transactions",
   testnet: "https://testnet.xrpl.org/transactions",
   devnet: "https://devnet.xrpl.org/transactions",
+};
+
+const useMarkdownContent = (path: string): MarkdownContentState => {
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(withBasePath(path), { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to load ${path} (${response.status})`);
+        }
+        const text = await response.text();
+        if (!cancelled) {
+          setContent(text);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : "온보딩 내용을 불러오지 못했습니다.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [path]);
+
+  return { content, loading, error };
 };
 
 const defaultTxTemplate = `{
@@ -184,6 +237,7 @@ const formatRippleTimeKST = (raw: unknown): string => {
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss} KST`;
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const getTxResult = (entry: AccountTransactionEntry): string | null => {
   const m = entry.meta as any;
   if (!m) return null;
@@ -214,23 +268,57 @@ const validateTxJsonShapes = (tx: Record<string, any>) => {
     throw new TxJsonParseError(`Invalid Fee. Must be drops as string (e.g. "12").`);
   }
 };
+/* eslint-enable @typescript-eslint/no-explicit-any */
 const buttonBaseClass =
   "rounded-full bg-white/15 px-4 py-2 text-sm font-semibold transition hover:bg-white/25";
 const buttonDisabledClass =
   "cursor-not-allowed bg-white/5 text-white/40 hover:bg-white/5";
 const smallButtonClass =
   "rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold transition hover:bg-white/25";
+const girinSubmitButtonClass =
+  "rounded-full bg-[#34D98F] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#4EF3A3]";
 const accentKoreanClass = "text-[#C4B5FD]";
+const GIRIN_HASH_KEYS = ["tx_hash", "txHash", "txId", "hash"] as const;
+
+const extractGirinHash = (
+  payload: Record<string, unknown> | null | undefined,
+): string | null => {
+  if (!payload) {
+    return null;
+  }
+
+  for (const key of GIRIN_HASH_KEYS) {
+    const value = payload[key];
+    if (typeof value === "string" && value.length > 0) {
+      return value;
+    }
+  }
+
+  if ("result" in payload) {
+    const nested = payload.result;
+    if (nested && typeof nested === "object") {
+      return extractGirinHash(nested as Record<string, unknown>);
+    }
+  }
+
+  return null;
+};
 function ConnectDropdownButton({
   onCreate,
   onLoad,
   onGirin,
   buttonClassName,
+  girinState,
 }: {
   onCreate: () => void;
   onLoad: () => void;
   onGirin?: () => void;
   buttonClassName?: string;
+  girinState?: {
+    available: boolean;
+    connecting: boolean;
+    connected: boolean;
+  };
 }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
@@ -270,6 +358,17 @@ function ConnectDropdownButton({
     // 메뉴 닫힌 뒤 실행
     setTimeout(() => fn(), 0);
   };
+
+  const girinConnecting = girinState?.connecting ?? false;
+  const girinConnected = girinState?.connected ?? false;
+  const girinDisabled = girinState ? !girinState.available : false;
+  const girinStatusText = girinConnected
+    ? "Connected"
+    : girinConnecting
+      ? "Connecting..."
+      : girinDisabled
+        ? "Unavailable for this network"
+        : "Open Girin App to connect with QR code";
 
   return (
     <div className="relative">
@@ -344,12 +443,22 @@ function ConnectDropdownButton({
               type="button"
               data-menuitem
               role="menuitem"
-              className="w-full rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus:outline-none inline-flex gap-2"
-              onClick={() => choose(onGirin)}
+              disabled={girinDisabled}
+              className={`w-full rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10 focus:outline-none inline-flex gap-2 ${
+                girinDisabled ? "cursor-not-allowed opacity-40 hover:bg-transparent" : ""
+              }`}
+              onClick={() => {
+                if (girinDisabled) {
+                  return;
+                }
+                choose(onGirin);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  choose(onGirin);
+                  if (!girinDisabled) {
+                    choose(onGirin);
+                  }
                 }
                 if (e.key === "ArrowDown") {
                   // 다음 메뉴로 포커스 이동
@@ -360,10 +469,17 @@ function ConnectDropdownButton({
                   (e.currentTarget.parentElement?.lastElementChild as HTMLElement | null)?.focus();
                 }
               }}
-            >
+              >
               <span className="flex flex-col">
-                <span className="text-white font-medium">Connect with Girin Wallet</span>
-                <span className="text-xs text-white/70">Open Girin App to connect with QR code</span>
+                <span className="text-white font-medium flex items-center gap-2">
+                  Connect with Girin Wallet
+                  {girinConnected ? (
+                    <span className="rounded-full bg-[#34D98F] px-2 py-0.5 text-[11px] font-semibold uppercase text-black">
+                      Live
+                    </span>
+                  ) : null}
+                </span>
+                <span className="text-xs text-white/70">{girinStatusText}</span>
               </span>
             </button>
           )}
@@ -506,6 +622,7 @@ export default function Home(): JSX.Element {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const explorerBaseUrl = NETWORK_EXPLORER_BASES[network];
   const clientRef = useRef<Client | null>(null);
+  const onboardingContent = useMarkdownContent("/onboarding-tooltip.md");
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const walletRef = useRef<Wallet | null>(null);
@@ -548,6 +665,18 @@ export default function Home(): JSX.Element {
   const [txInput, setTxInput] = useState(defaultTxTemplate);
   const txInputRef = useRef<HTMLTextAreaElement | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const {
+    isEnabled: isGirinAvailable,
+    isConnecting: isGirinConnecting,
+    isConnected: isGirinConnected,
+    accountAddress: girinAccountAddress,
+    connect: connectGirin,
+    reset: resetGirin,
+    submitViaGirin,
+  } = useGirinWallet(network, walletConnectProjectId);
+  const currentAccountAddress = girinAccountAddress ?? wallet?.classicAddress ?? null;
+  const isUsingGirinWallet = Boolean(girinAccountAddress);
 
   const chatbotLauncherButton = (
     <button
@@ -574,17 +703,29 @@ export default function Home(): JSX.Element {
     </button>
   );
 
-  const handleConnectGirin = useCallback(() => {
-    // 여기서 실제 QR 모달 열기나 딥링크 호출을 붙이면 됨
-    // 예시 1) 커스텀 이벤트로 모달 트리거
-    window.dispatchEvent(new CustomEvent("girin:open-qr-connect"));
-  
-    // 예시 2) 가능한 경우 딥링크 시도
-    // window.location.href = "girin://connect";
-  
-    setWalletMessage("Girin Wallet 연결을 시작합니다. 앱에서 QR로 연결하세요(구현 예정)");
-    setWalletError(null);
-  }, []);
+  const handleConnectGirin = useCallback(async () => {
+    if (!isGirinAvailable) {
+      setWalletError("현재 네트워크에서는 Girin Wallet을 사용할 수 없습니다.");
+      return;
+    }
+
+    try {
+      setWalletMessage("Girin Wallet 연결을 시작합니다. Girin Wallet 앱을 열어 QR을 스캔해 주세요.");
+      setWalletError(null);
+      setFaucetResult(null);
+      setFaucetError(null);
+      setTxResult(null);
+      setTxError(null);
+      await connectGirin();
+      setWallet(null);
+      walletRef.current = null;
+    } catch (error) {
+      setWalletError(getErrorMessage(error, "Girin Wallet 연결에 실패했습니다."));
+    }
+  }, [
+    connectGirin,
+    isGirinAvailable,
+  ]);
 
   const handleInsertTx = useCallback(
     (next: string, mode: "replace" | "append" = "replace") => {
@@ -688,10 +829,10 @@ export default function Home(): JSX.Element {
   const sidebarContext = useMemo(
     () => ({
       networkKey: network,
-      walletAddress: wallet?.classicAddress ?? undefined,
+      walletAddress: currentAccountAddress ?? undefined,
       lastTxHash: txResult?.hash ?? null,
     }),
-    [network, wallet?.classicAddress, txResult?.hash],
+    [network, currentAccountAddress, txResult?.hash],
   );
 
   useEffect(() => {
@@ -727,6 +868,13 @@ export default function Home(): JSX.Element {
     } catch {
       // ignore corrupted storage
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    setIsOnboardingOpen(true);
   }, []);
 
   useEffect(() => {
@@ -803,16 +951,14 @@ export default function Home(): JSX.Element {
   }, []);
 
   const refreshAccountData = useCallback(
-    async (targetWallet: Wallet) => {
+    async (account: string | null | undefined) => {
       const client = clientRef.current;
-      if (!client) {
+      if (!client || !account) {
         return;
       }
 
       setAccountState("loading");
       setAccountError(null);
-
-      const account = targetWallet.classicAddress;
 
       try {
         const [infoResponse, linesResponse] = await Promise.all([
@@ -872,17 +1018,30 @@ export default function Home(): JSX.Element {
     [],
   );
   useEffect(() => {
-    const onToggle = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { enabled?: boolean } | undefined;
-      const enabled = !!detail?.enabled;
-      // TODO: enabled에 따라 화면의 필드 위에 툴팁 오버레이를 보여주거나 제거
-      // ex) setShowTooltips(enabled)
+    if (!isGirinAvailable && girinAccountAddress) {
+      resetGirin();
+    }
+  }, [girinAccountAddress, isGirinAvailable, resetGirin]);
+
+  useEffect(() => {
+    if (!currentAccountAddress) {
+      resetAccountState();
+      return;
+    }
+    if (connectionStatus !== "connected") {
+      return;
+    }
+    void refreshAccountData(currentAccountAddress);
+  }, [connectionStatus, currentAccountAddress, refreshAccountData, resetAccountState]);
+
+  useEffect(() => {
+    const onToggle = () => {
+      // TODO: enabled값을 활용해 토글 기능을 완성하거나 삭제
+      // ex) setShowTooltips(detail?.enabled ?? false)
     };
-    window.addEventListener("xrpl-dev:toggle-tooltips" as any, onToggle);
-    return () => window.removeEventListener("xrpl-dev:toggle-tooltips" as any, onToggle);
-   }, 
-   [],
-  );
+    window.addEventListener("xrpl-dev:toggle-tooltips", onToggle as EventListener);
+    return () => window.removeEventListener("xrpl-dev:toggle-tooltips", onToggle as EventListener);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -907,8 +1066,8 @@ export default function Home(): JSX.Element {
         setConnectionStatus("connected");
         setConnectionError(null);
 
-        if (walletRef.current) {
-          void refreshAccountData(walletRef.current);
+        if (currentAccountAddress) {
+          void refreshAccountData(currentAccountAddress);
         }
       } catch (error) {
         setConnectionStatus("error");
@@ -930,7 +1089,7 @@ export default function Home(): JSX.Element {
       cancelled = true;
       void disconnectClient();
     };
-  }, [currentNetworkConfig, disconnectClient, refreshAccountData]);
+  }, [currentAccountAddress, currentNetworkConfig, disconnectClient, refreshAccountData]);
 
   useEffect(() => {
     resetAccountState();
@@ -947,6 +1106,7 @@ export default function Home(): JSX.Element {
   }, []);
 
   const handleGenerateWallet = useCallback(() => {
+    resetGirin();
     const newWallet = Wallet.generate();
     setWallet(newWallet);
     walletRef.current = newWallet;
@@ -956,16 +1116,17 @@ export default function Home(): JSX.Element {
     setFaucetError(null);
     setTxResult(null);
     setTxError(null);
-    void refreshAccountData(newWallet);
-  }, [refreshAccountData]);
+    void refreshAccountData(newWallet.classicAddress);
+  }, [refreshAccountData, resetGirin]);
 
   const handleConnectWallet = useCallback(() => {
-    const seed = window.prompt("연결할 XRPL 지갑의 시드를 입력하세요.");
+    const seed = window.prompt("사용할 XRPL 지갑의 시드를 입력해주세요.");
     if (!seed) {
       return;
     }
 
     try {
+      resetGirin();
       const nextWallet = Wallet.fromSeed(seed.trim());
       setWallet(nextWallet);
       walletRef.current = nextWallet;
@@ -975,33 +1136,33 @@ export default function Home(): JSX.Element {
       setFaucetError(null);
       setTxResult(null);
       setTxError(null);
-      void refreshAccountData(nextWallet);
+      void refreshAccountData(nextWallet.classicAddress);
     } catch (error) {
       setWalletError(
-        getErrorMessage(error, "시드로 지갑을 연결하는 데 실패했습니다."),
+        getErrorMessage(error, "시드 지갑을 연결하는 데 실패했습니다."),
       );
     }
-  }, [refreshAccountData]);
+  }, [refreshAccountData, resetGirin]);
 
   const handleOpenFlagsModal = useCallback(() => {
-    if (!walletRef.current) {
-      setWalletError("먼저 지갑을 생성하거나 연결하세요.");
+    if (!currentAccountAddress) {
+      setWalletError("지갑을 생성하거나 불러와 주세요.");
       return;
     }
     setIsFlagsModalOpen(true);
-  }, []);
+  }, [currentAccountAddress]);
 
   const handleCloseFlagsModal = useCallback(() => {
     setIsFlagsModalOpen(false);
   }, []);
 
   const handleOpenTrustlinesModal = useCallback(() => {
-    if (!walletRef.current) {
-      setWalletError("먼저 지갑을 생성하거나 연결하세요.");
+    if (!currentAccountAddress) {
+      setWalletError("지갑을 생성하거나 불러와 주세요.");
       return;
     }
     setIsTrustlinesModalOpen(true);
-  }, []);
+  }, [currentAccountAddress]);
 
   const handleCloseTrustlinesModal = useCallback(() => {
     setIsTrustlinesModalOpen(false);
@@ -1097,7 +1258,7 @@ export default function Home(): JSX.Element {
 
   const handleConnectSavedWallet = useCallback(() => {
     if (!selectedSavedWalletName) {
-      setWalletError("연결할 저장 지갑을 선택하세요.");
+      setWalletError("사용할 저장 지갑을 선택해주세요.");
       return;
     }
 
@@ -1110,27 +1271,28 @@ export default function Home(): JSX.Element {
     }
 
     try {
+      resetGirin();
       const nextWallet = Wallet.fromSeed(entry.seed);
       if (
         nextWallet.classicAddress !== entry.classicAddress ||
         nextWallet.publicKey !== entry.publicKey
       ) {
         setWalletError(
-          "저장된 지갑 정보가 현재 시드와 일치하지 않습니다.",
+          "저장된 정보와 다른 지갑이어서 연결할 수 없습니다.",
         );
         return;
       }
 
       setWallet(nextWallet);
       walletRef.current = nextWallet;
-      setWalletMessage(`"${entry.name}" 지갑으로 연결했습니다.`);
+      setWalletMessage(`"${entry.name}" 지갑을 연결했습니다.`);
       setWalletError(null);
       setFaucetResult(null);
       setFaucetError(null);
       setTxResult(null);
       setTxError(null);
       setIsSavedWalletModalOpen(false);
-      void refreshAccountData(nextWallet);
+      void refreshAccountData(nextWallet.classicAddress);
     } catch (error) {
       setWalletError(
         getErrorMessage(error, "저장된 지갑을 연결하는 데 실패했습니다."),
@@ -1138,6 +1300,7 @@ export default function Home(): JSX.Element {
     }
   }, [
     refreshAccountData,
+    resetGirin,
     savedWallets,
     selectedSavedWalletName,
   ]);
@@ -1184,10 +1347,10 @@ export default function Home(): JSX.Element {
   );
 
   const handleOpenHistoryModal = useCallback(async () => {
-    const currentWallet = walletRef.current;
+    const account = currentAccountAddress;
     const client = clientRef.current;
-    if (!currentWallet) {
-      setWalletError("먼저 지갑을 생성하거나 연결하세요.");
+    if (!account) {
+      setWalletError("지갑을 생성하거나 불러와 주세요.");
       return;
     }
     if (!client) {
@@ -1205,7 +1368,7 @@ export default function Home(): JSX.Element {
     try {
       const response = await client.request<AccountTxRequest>({
         command: "account_tx",
-        account: currentWallet.classicAddress,
+        account,
         ledger_index_min: -1,
         ledger_index_max: -1,
         limit: 20,
@@ -1301,7 +1464,7 @@ export default function Home(): JSX.Element {
     } finally {
       setHistoryLoading(false);
     }
-  }, []);
+  }, [currentAccountAddress]);
 
   const handleCloseHistoryModal = useCallback(() => {
     setIsHistoryModalOpen(false);
@@ -1325,28 +1488,31 @@ export default function Home(): JSX.Element {
   }, []);
 
   const handleRefreshAccount = useCallback(() => {
-    const currentWallet = walletRef.current;
-    if (!currentWallet) {
-      setWalletError("먼저 지갑을 생성하거나 연결하세요.");
+    if (!currentAccountAddress) {
+      setWalletError("지갑을 생성하거나 불러와 주세요.");
       return;
     }
-    void refreshAccountData(currentWallet);
-  }, [refreshAccountData]);
+    void refreshAccountData(currentAccountAddress);
+  }, [currentAccountAddress, refreshAccountData]);
 
   const handleFaucet = useCallback(async () => {
     const currentWallet = walletRef.current;
     const client = clientRef.current;
 
+    if (isUsingGirinWallet) {
+      setFaucetError("Girin Wallet 연결 상태에서는 Faucet을 사용할 수 없습니다.");
+      return;
+    }
     if (!currentWallet) {
-      setFaucetError("먼저 지갑을 생성하거나 연결하세요.");
+      setFaucetError("지갑을 생성하거나 불러와 주세요.");
       return;
     }
     if (!client) {
-      setFaucetError("XRPL 네트워크에 연결되지 않았습니다.");
+      setFaucetError("XRPL 네트워크에 연결되어 있지 않습니다.");
       return;
     }
     if (!isFaucetAvailable(currentNetworkConfig)) {
-      setFaucetError("이 네트워크에서는 Faucet을 사용할 수 없습니다.");
+      setFaucetError("해당 네트워크에서는 Faucet을 사용할 수 없습니다.");
       return;
     }
 
@@ -1356,20 +1522,21 @@ export default function Home(): JSX.Element {
     try {
       const result = await client.fundWallet(currentWallet);
       setFaucetResult(result);
-      setWalletMessage("Faucet 요청이 완료되었습니다.");
-      await refreshAccountData(currentWallet);
+      setWalletMessage("Faucet 요청을 완료했습니다.");
+      await refreshAccountData(currentWallet.classicAddress);
     } catch (error) {
       setFaucetError(getErrorMessage(error, "Faucet 요청에 실패했습니다."));
     } finally {
       setIsFaucetLoading(false);
     }
-  }, [currentNetworkConfig, refreshAccountData]);
+  }, [currentNetworkConfig, isUsingGirinWallet, refreshAccountData]);
 
   const handleSubmitTransaction = useCallback(async () => {
     const currentWallet = walletRef.current;
     const client = clientRef.current;
-  
-    if (!currentWallet) {
+    const account = girinAccountAddress ?? currentWallet?.classicAddress ?? null;
+
+    if (!account) {
       setTxError("지갑이 연결되어 있지 않습니다.");
       return;
     }
@@ -1377,34 +1544,48 @@ export default function Home(): JSX.Element {
       setTxError("XRPL 네트워크에 연결되어 있지 않습니다.");
       return;
     }
-  
+
     setIsSubmittingTx(true);
     setTxError(null);
-  
+
     try {
       const parsed = parseTxJsonInput(txInput) as MutableTx;
       validateTxJsonShapes(parsed);
-    
-      // Account 자동 채움
+
       if (!parsed.Account) {
-        parsed.Account = currentWallet.classicAddress;
+        parsed.Account = account;
       }
-    
-      // 수수료/시퀀스/LLS 자동 채움
+
       const prepared = await client.autofill(parsed as SubmittableTransaction);
-    
-      // 제출 & 검증 대기
+
+      if (isUsingGirinWallet) {
+        const response = await submitViaGirin(prepared);
+        const txHash = extractGirinHash(response ?? undefined);
+        setTxResult({
+          engineResult: null,
+          engineResultMessage: "Girin Wallet에 서명 요청을 전송했습니다.",
+          hash: txHash,
+        });
+        setWalletMessage("Girin Wallet 앱에서 서명 요청을 승인해 주세요.");
+        await refreshAccountData(account);
+        return;
+      }
+
+      if (!currentWallet) {
+        setTxError("지갑이 연결되어 있지 않습니다.");
+        return;
+      }
+
       const resp = await client.submitAndWait(
         prepared as SubmittableTransaction,
         { wallet: currentWallet },
       );
-    
-      // 응답 파싱 (result 래퍼 유무 대응)
+
+      /* eslint-disable @typescript-eslint/no-explicit-any */
       const top: any  = (resp as any)?.result ?? (resp as any) ?? {};
       const meta: any = top.meta ?? top.meta_json ?? {};
       const tx: any   = top.tx_json ?? top.tx ?? {};
-    
-      // 최종 코드: meta.TransactionResult 우선, 없으면 engine_result 보조
+
       const engineResult: string | null =
         typeof meta.TransactionResult === "string"
           ? meta.TransactionResult
@@ -1413,7 +1594,7 @@ export default function Home(): JSX.Element {
             : typeof top.engine_result === "string"
               ? top.engine_result
               : null;
-    
+
       const engineResultMessage: string | null =
         typeof top.engine_result_message === "string"
           ? top.engine_result_message
@@ -1422,19 +1603,18 @@ export default function Home(): JSX.Element {
             : typeof meta.engine_result_message === "string"
               ? meta.engine_result_message
               : null;
-    
+
       const hash: string | null =
         typeof tx.hash === "string"
           ? tx.hash
           : typeof top.hash === "string"
             ? top.hash
             : null;
-    
+      /* eslint-enable @typescript-eslint/no-explicit-any */
+
       setTxResult({ engineResult, engineResultMessage, hash });
-      setWalletMessage("트랜잭션을 제출했습니다.");
-      await refreshAccountData(currentWallet);
-    }
-     catch (error) {
+      await refreshAccountData(account);
+    } catch (error) {
       if (error instanceof TxJsonParseError) {
         setTxError(error.message);
       } else {
@@ -1449,22 +1629,21 @@ export default function Home(): JSX.Element {
     } finally {
       setIsSubmittingTx(false);
     }
-  }, [refreshAccountData, txInput]);
+  }, [
+    girinAccountAddress,
+    isUsingGirinWallet,
+    refreshAccountData,
+    submitViaGirin,
+    txInput,
+  ]);
 
-  const connectionStatusText = useMemo(() => {
-    switch (connectionStatus) {
-      case "connecting":
-        return "연결 중";
-      case "connected":
-        return "연결됨";
-      case "error":
-      default:
-        return "오류";
-    }
-  }, [connectionStatus]);
+  const transactionSubmitButtonClass = `${isUsingGirinWallet ? girinSubmitButtonClass : buttonBaseClass} ${
+    isSubmittingTx ? buttonDisabledClass : ""
+  } self-start`;
 
   return (
-    <div className="min-h-screen bg-black text-white flex justify-center items-center">
+    <>
+      <div className="min-h-screen bg-black text-white flex justify-center items-center">
       
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-7 px-0 py-15">
           <header className="space-y-8 ">
@@ -1530,6 +1709,9 @@ export default function Home(): JSX.Element {
                 </span>
                 {connectionStatusMeta.label}
               </div>
+              {connectionError ? (
+                <p className="text-sm text-red-400">{connectionError}</p>
+              ) : null}
               <div className="pointer-events-auto ml-auto">
                 {chatbotLauncherButton}
               </div>
@@ -1546,7 +1728,12 @@ export default function Home(): JSX.Element {
                 <ConnectDropdownButton
                   onCreate={handleGenerateWallet}
                   onLoad={handleConnectWallet}
-                  onGirin={handleConnectGirin}  
+                  onGirin={isGirinAvailable ? handleConnectGirin : undefined}
+                  girinState={{
+                    available: isGirinAvailable,
+                    connecting: isGirinConnecting,
+                    connected: isGirinConnected,
+                  }}
                   buttonClassName="whitespace-nowrap px-5 md:px-6"
                 />
                 <button
@@ -1563,13 +1750,15 @@ export default function Home(): JSX.Element {
                     isFaucetLoading ||
                     !wallet ||
                     !isFaucetAvailable(currentNetworkConfig) ||
-                    connectionStatus !== "connected"
+                    connectionStatus !== "connected" ||
+                    isUsingGirinWallet
                   }
                   className={`${buttonBaseClass} whitespace-nowrap px-5 md:px-6 ${
                     isFaucetLoading ||
                     !wallet ||
                     !isFaucetAvailable(currentNetworkConfig) ||
-                    connectionStatus !== "connected"
+                    connectionStatus !== "connected" ||
+                    isUsingGirinWallet
                       ? buttonDisabledClass
                       : ""
                   }`}
@@ -1589,28 +1778,40 @@ export default function Home(): JSX.Element {
               <p className="text-base text-red-400">{faucetError}</p>
             ) : null}
 
-            {wallet ? (
+            {currentAccountAddress ? (
               <div className="space-y-3 rounded-2xl border border-white/10 bg-black/30 px-3 py-3">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-white">
                     Current Wallet
                   </p>
-                  <p className="break-all text-sm  text-[#D4FF9A]">
-                    {wallet.classicAddress}
+                  <p className="break-all text-sm text-[#D4FF9A]">
+                    {currentAccountAddress}
                   </p>
+                  {isUsingGirinWallet ? (
+                    <p className="text-xs text-white/70">Girin Wallet로 연결된 계정입니다.</p>
+                  ) : null}
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-white">Public Key</p>
-                  <p className="break-all text-sm text-[#C6F4FF]">
-                    {wallet.publicKey}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-white">Seed</p>
-                  <p className="break-all text-sm text-[#FFB788]">
-                    {wallet.seed}
-                  </p>
-                </div>
+                {!isUsingGirinWallet && wallet ? (
+                  <>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-white">Public Key</p>
+                      <p className="break-all text-sm text-[#C6F4FF]">
+                        {wallet.publicKey}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-white">Seed</p>
+                      <p className="break-all text-sm text-[#FFB788]">
+                        {wallet.seed}
+                      </p>
+                    </div>
+                  </>
+                ) : null}
+                {isUsingGirinWallet ? (
+                  <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/70">
+                    Girin Wallet 사용 시 키 정보는 앱에서만 확인할 수 있습니다.
+                  </div>
+                ) : null}
                 <div className="space-y-3 rounded-2xl border border-white/10 bg-black/40 px-5 py-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-lg font-semibold text-white">Account Info</p>
@@ -1619,6 +1820,7 @@ export default function Home(): JSX.Element {
                         type="button"
                         className={smallButtonClass}
                         onClick={handleRefreshAccount}
+                        disabled={!currentAccountAddress}
                       >
                         Refresh
                       </button>
@@ -1636,9 +1838,9 @@ export default function Home(): JSX.Element {
                         type="button"
                         onClick={handleOpenFlagsModal}
                         className={`${smallButtonClass} ${
-                          wallet ? "" : "opacity-40 cursor-not-allowed"
+                          currentAccountAddress ? "" : "opacity-40 cursor-not-allowed"
                         }`}
-                        disabled={!wallet}
+                        disabled={!currentAccountAddress}
                       >
                         Flags
                       </button>
@@ -1646,9 +1848,9 @@ export default function Home(): JSX.Element {
                         type="button"
                         onClick={handleOpenTrustlinesModal}
                         className={`${smallButtonClass} ${
-                          wallet ? "" : "opacity-40 cursor-not-allowed"
+                          currentAccountAddress ? "" : "opacity-40 cursor-not-allowed"
                         }`}
-                        disabled={!wallet}
+                        disabled={!currentAccountAddress}
                       >
                         Trustline
                       </button>
@@ -1656,10 +1858,10 @@ export default function Home(): JSX.Element {
                   </div>
                   {accountState === "idle" ? (
                     <p className={`mt-2 text-base ${accentKoreanClass}`}>
-                      계정 정보를 불러오려면 잠시 기다려 주세요.
+                      지갑 연결 후 정보를 불러올 수 있습니다.
                     </p>
                   ) : null}
-                  {accountState === "loading" ? (
+                          {accountState === "loading" ? (
                     <p className={`mt-2 text-base ${accentKoreanClass}`}>
                       로딩 중...
                     </p>
@@ -1750,16 +1952,16 @@ export default function Home(): JSX.Element {
               </div>
 
               <div className="min-w-0 flex sm:flex-col sm:items-end sm:justify-between sm:gap-4">
-                <button
-                  type="button"
-                  onClick={() => { void handleOpenHistoryModal(); }}
-                  disabled={!wallet || connectionStatus !== "connected"}
-                  className={`${buttonBaseClass} ${
-                    !wallet || connectionStatus !== "connected" ? buttonDisabledClass : ""
-                  } whitespace-nowrap`}
-                >
-                  Transaction History
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => { void handleOpenHistoryModal(); }}
+                    disabled={!currentAccountAddress || connectionStatus !== "connected"}
+                    className={`${buttonBaseClass} ${
+                      !currentAccountAddress || connectionStatus !== "connected" ? buttonDisabledClass : ""
+                    } whitespace-nowrap`}
+                  >
+                    Transaction History
+                  </button>
               </div>
 
             </div>
@@ -1783,9 +1985,9 @@ export default function Home(): JSX.Element {
                 type="button"
                 onClick={handleSubmitTransaction}
                 disabled={isSubmittingTx}
-                className={`${buttonBaseClass} ${isSubmittingTx ? buttonDisabledClass : ""} self-start`}
+                className={transactionSubmitButtonClass}
               >
-                {isSubmittingTx ? "전송 중..." : "Transaction Submit"}
+                {isSubmittingTx ? "전송 중..." : isUsingGirinWallet ? "Submit via Girin Wallet" : "Transaction Submit"}
               </button>
               {txError ? <p className="text-base text-red-400">{txError}</p> : null}
               {txResult ? (
@@ -1817,7 +2019,18 @@ export default function Home(): JSX.Element {
                   {txResult.hash ? (
                     <p className="mt-1">
                       Hash:{" "}
-                      <span className="break-all font-mono">{txResult.hash}</span>
+                      {explorerBaseUrl ? (
+                        <a
+                          href={`${explorerBaseUrl}/${txResult.hash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="break-all font-mono text-[#D4FF9A] underline-offset-2 hover:underline"
+                        >
+                          {txResult.hash}
+                        </a>
+                      ) : (
+                        <span className="break-all font-mono">{txResult.hash}</span>
+                      )}
                     </p>
                   ) : null}
                 </div>
@@ -1826,6 +2039,39 @@ export default function Home(): JSX.Element {
           </section>
         </main>
       </div>
+      {isOnboardingOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-6 py-10"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-2xl rounded-2xl border border-white/15 bg-neutral-800 p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-2xl font-semibold text-white">XRPL Dev Console</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOnboardingOpen(false)}
+                className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/70 transition hover:bg-white/25"
+              >
+                닫기
+              </button>
+            </div>
+            <div className="mt-4 max-h-[60vh] overflow-y-auto rounded-xl border border-white/10 bg-black/60 p-4">
+              {onboardingContent.loading ? (
+                <p className="text-sm text-white/70">온보딩 내용을 불러오는 중입니다...</p>
+              ) : onboardingContent.error ? (
+                <p className="text-sm text-red-400">{onboardingContent.error}</p>
+              ) : (
+                <div className="space-y-4 text-sm leading-relaxed text-white/90 [&_h2]:text-xl [&_strong]:text-white">
+                  <ReactMarkdown>{onboardingContent.content}</ReactMarkdown>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
       {isIouBalancesModalOpen ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-6 py-10"
@@ -2312,7 +2558,23 @@ export default function Home(): JSX.Element {
           </div>
         </div>
       ) : null}
-    </div>
+      </div>
+      {walletConnectProjectId ? (
+        <WalletConnectModalSign
+          projectId={walletConnectProjectId}
+          metadata={GIRIN_METADATA}
+          modalOptions={{
+            themeMode: "dark",
+            themeVariables: {
+              "--wcm-background-color": "#292A30CC",
+              "--wcm-accent-color": "#34D98F",
+              "--wcm-accent-fill-color": "#34D98F",
+            },
+            enableExplorer: false,
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 

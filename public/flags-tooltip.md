@@ -79,7 +79,7 @@
   ⚠️ 반드시 Regular Key 또는 MultiSig를 설정해야 합니다.
 - **`asfNoFreeze` (6)**  
   → 발행자가 발행한 IOU를 Freeze하지 못하도록 영구 선언.
-- **`asfDefaultRipple` (8)**  
-  → 계정의 트러스트라인 기본값을 Ripple 허용으로 전환.
+- **`asfAllowTrustLineClawback` (16)**  
+  → 발행자가 Trustline에서 자산을 회수(Clawback)할 수 있도록 허용.
 
 > ✅ 한 번 설정하면 되돌릴 수 없는 flag는 **충분한 검토 후 적용**하세요.

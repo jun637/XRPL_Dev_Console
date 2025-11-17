@@ -151,9 +151,7 @@ const RECIPES: Recipe[] = [
       Account: "보내는 주소",
       Destination: "받는 주소",
       Amount: "XRP drops 문자열 (예: '1000000')",
-      DestinationTag: "수취자 태그 (옵션)",
-      InvoiceID: "64바이트 hex (옵션)",
-      Memos: "메모 배열 (옵션)"
+      DestinationTag: "수취자 태그 (옵션)"
     }),
   },
   {
@@ -165,12 +163,6 @@ const RECIPES: Recipe[] = [
       Account: "보내는 주소",
       Destination: "받는 주소",
       Amount: { currency: "토큰코드", issuer: "발행자 주소", value: "수량" },
-      SendMax: { currency: "최대 지불 토큰", issuer: "발행자 주소", value: "수량 (옵션)" },
-      Paths: "경로 지정 배열 (옵션)",
-      DeliverMin: { currency: "최소 수령 토큰", issuer: "발행자 주소", value: "수량 (옵션)" },
-      DestinationTag: "수취자 태그 (옵션)",
-      InvoiceID: "64바이트 hex (옵션)",
-      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -220,12 +212,6 @@ const RECIPES: Recipe[] = [
       Account: "계정 주소",
       SetFlag: "설정할 플래그 번호 (옵션)",
       ClearFlag: "해제할 플래그 번호 (옵션)",
-      Domain: "hex-encoded 도메인 (옵션)",
-      EmailHash: "이메일 해시 (옵션)",
-      TransferRate: "수수료율(만분율) (옵션)",
-      TickSize: "호가 단위 (옵션)",
-      NFTokenMinter: "NFT 민터 설정 주소 (옵션)",
-      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -235,9 +221,7 @@ const RECIPES: Recipe[] = [
     build: (ctx) => ({
       TransactionType: "AccountDelete",
       Account: "삭제할 계정 주소",
-      Destination: "잔액을 받을 주소",
-      DestinationTag: "수취자 태그 (옵션)",
-      Memos: "메모 배열 (옵션)"
+      Destination: "잔액을 받을 주소"
     }),
   },
   {
@@ -247,10 +231,7 @@ const RECIPES: Recipe[] = [
     build: (ctx) => ({
       TransactionType: "TrustSet",
       Account: "설정 계정 주소",
-      LimitAmount: { currency: "토큰코드", issuer: "발행자 주소", value: "한도" },
-      QualityIn: "수신 품질(옵션)",
-      QualityOut: "송신 품질(옵션)",
-      Memos: "메모 배열 (옵션)"
+      LimitAmount: { currency: "토큰코드", issuer: "발행자 주소", value: "한도" }
     }),
   },
 
@@ -1197,7 +1178,7 @@ const FLAG_ITEMS: FlagItem[] = [
       flag: 16,
       title: "asfAllowTrustLineClawback",
       description:
-        "발행자가 Trustline에서 자산을 회수(Clawback)할 수 있도록 허용. 한번번 설정하면 되돌릴 수 없음",
+        "발행자가 Trustline에서 자산을 회수(Clawback)할 수 있도록 허용. 한번 설정하면 되돌릴 수 없음",
       detailUrl:
         "https://xrpl.org/docs/references/protocol/transactions/types/accountset"
     },
@@ -2028,7 +2009,7 @@ const DEV_LINKS: DevLink[] = [
   { id: "xrpl-dev-portal", title: "xrpl-dev-portal", desc: "XRPL 샘플 코드와 가이드 모음", href: "https://github.com/XRPLF/xrpl-dev-portal", icon: <IconDoc /> },
   { id: "xrpl-js", title: "xrpl.js", desc: "XRPL Javascript SDK 레퍼런스", href: "https://js.xrpl.org", icon: <IconJs /> },
   { id: "xrpl-py", title: "xrpl-py", desc: "XRPL Python SDK 레퍼런스", href: "https://xrpl-py.readthedocs.io/en/stable", icon: <IconPy /> },
-  { id: "explorer-mainnet", title: "XRPL Explorer Mainnet", desc: "XRPL 메인넷 트랜잭션 브라우저", href: "https://livenet.xrpl.org", icon: <IconGlobe /> },
+  { id: "explorer-mainnet", title: "XRPL Explorer", desc: "XRPL 트랜잭션 익스플로러", href: "https://livenet.xrpl.org", icon: <IconGlobe /> },
   { id: "xrpscan", title: "XRPScan", desc: "XRPL 대체 익스플로러", href: "https://xrpscan.com", icon: <IconGlobe /> },
 ];
 
@@ -2337,7 +2318,10 @@ export default function Sidebar({ open, onClose, onInsertTx, context }: SidebarP
         ※ 2025/11/12: Tx Library 개선: Insert되는 트랜잭션 json 내부 한글 설명 추가, 해당 트랜잭션에 대한 xrpl.org(공식 docs 링크) 버튼 추가. Transaction History 모달에서 Hash 클릭 시 연결된 네트워크의 XRPL Explorer로 이동
         </p>
         <p className="mt-2 text-sm text-white/80">
-          ※ 향후 개선사항: Girin Wallet 연결 모달 구현, UI 개선, Transaction History 설명 문서 추가
+        ※ 2025/11/13: Girin Wallet 연결 모달 구현(초기 단계)
+        </p>
+        <p className="mt-2 text-sm text-white/80">
+          ※ 향후 개선사항: Girin Wallet 연결 후 기능 이용 시 발생하는 Error case 관련 수정, UI 개선, Transaction History 설명 문서 추가
         </p>
         
       </Modal>

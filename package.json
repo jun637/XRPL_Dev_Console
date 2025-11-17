@@ -5,11 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3000",
     "lint": "eslint",
     "preview:static": "npx serve out -p 5050"
   },
   "dependencies": {
+    "@walletconnect/modal-sign-html": "^2.7.0",
+    "@walletconnect/modal-sign-react": "^2.7.0",
+    "@walletconnect/sign-client": "^2.23.0",
     "next": "16.0.1",
     "react": "19.2.0",
     "react-dom": "19.2.0",
