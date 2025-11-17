@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { useConnect, useRequest } from "@walletconnect/modal-sign-react";
 import type { SessionTypes } from "@walletconnect/types";
 import type { NetworkKey } from "@/lib/xrpl/constants";
@@ -36,61 +36,75 @@ export function useGirinWallet(network: NetworkKey, projectId?: string) {
 
   const isSupportedNetwork = network !== "devnet";
   const isConfigured = Boolean(projectId);
-  const isEnabled = isSupportedNetwork && isConfigured;
+
+  if (!isConfigured) {
+    const unavailable = async () => {
+      throw new Error("Girin Wallet을 사용하려면 NEXT_PUBLIC_PROJECT_ID를 설정해야 합니다.");
+    };
+
+    return {
+      isEnabled: false,
+      isConnecting: false,
+      isConnected: false,
+      accountAddress: null,
+      connect: unavailable,
+      reset: () => {},
+      submitViaGirin: unavailable,
+    };
+  }
 
   const { connect, loading: isConnecting } = useConnect({
     requiredNamespaces: GIRIN_REQUIRED_NAMESPACES,
   });
 
-  const { request } = useRequest<Record<string, unknown>>();
+  const { request } = useRequest<Record<string, unknown>>({
+    chainId: "xrpl:0",
+    topic: "",
+    request: {
+      method: "xrpl_signTransaction",
+      params: { tx_json: {} },
+    },
+  });
 
-  const currentAccountAddress = useMemo(() => {
-    const chainId = NETWORK_TO_WALLETCONNECT_CHAIN[network];
-    if (!chainId) {
-      return null;
-    }
-    return accounts[chainId] ?? null;
-  }, [accounts, network]);
+  const chainId = NETWORK_TO_WALLETCONNECT_CHAIN[network];
+  const currentAccountAddress = chainId ? accounts[chainId] ?? null : null;
+  const isEnabled = isSupportedNetwork && isConfigured;
 
-  const connectGirin = useCallback(async () => {
+  const connectGirin = async () => {
     if (!isEnabled) {
-      throw new Error("Girin Wallet is unavailable for this network or configuration.");
+      throw new Error("현재 네트워크에서는 Girin Wallet을 사용할 수 없습니다.");
     }
     const nextSession = await connect();
     const nextAccounts = extractAccountsFromSession(nextSession);
     setSession(nextSession);
     setAccounts(nextAccounts);
     return nextAccounts;
-  }, [connect, isEnabled]);
+  };
 
-  const resetGirin = useCallback(() => {
+  const resetGirin = () => {
     setSession(null);
     setAccounts({});
-  }, []);
+  };
 
-  const submitViaGirin = useCallback(
-    async (txJson: Record<string, unknown>): Promise<Record<string, unknown> | null> => {
-      if (!session) {
-        throw new Error("Girin Wallet 세션이 활성화되어 있지 않습니다.");
-      }
-      const chainId = NETWORK_TO_WALLETCONNECT_CHAIN[network];
-      if (!chainId) {
-        throw new Error("현재 네트워크는 Girin Wallet에서 지원되지 않습니다.");
-      }
+  const submitViaGirin = async (txJson: Record<string, unknown>): Promise<Record<string, unknown> | null> => {
+    if (!session) {
+      throw new Error("Girin Wallet 세션이 활성화되어 있지 않습니다.");
+    }
+    if (!chainId) {
+      throw new Error("현재 네트워크는 Girin Wallet에서 지원되지 않습니다.");
+    }
 
-      const response = await request({
-        chainId,
-        topic: session.topic,
-        request: {
-          method: "xrpl_signTransaction",
-          params: { tx_json: txJson },
-        },
-      });
+    const response = await request({
+      chainId,
+      topic: session.topic,
+      request: {
+        method: "xrpl_signTransaction",
+        params: { tx_json: txJson },
+      },
+    });
 
-      return isRecord(response) ? response : null;
-    },
-    [network, request, session],
-  );
+    return isRecord(response) ? response : null;
+  };
 
 
   return {

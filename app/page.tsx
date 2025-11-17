@@ -1787,9 +1787,7 @@ export default function Home(): JSX.Element {
                   <p className="break-all text-sm text-[#D4FF9A]">
                     {currentAccountAddress}
                   </p>
-                  {isUsingGirinWallet ? (
-                    <p className="text-xs text-white/70">Girin Wallet로 연결된 계정입니다.</p>
-                  ) : null}
+                  
                 </div>
                 {!isUsingGirinWallet && wallet ? (
                   <>
@@ -1809,7 +1807,7 @@ export default function Home(): JSX.Element {
                 ) : null}
                 {isUsingGirinWallet ? (
                   <div className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/70">
-                    Girin Wallet 사용 시 키 정보는 앱에서만 확인할 수 있습니다.
+                    Girin Wallet 연결 시 Public Key 및 Seed 정보는 제공되지 않습니다.
                   </div>
                 ) : null}
                 <div className="space-y-3 rounded-2xl border border-white/10 bg-black/40 px-5 py-4">
