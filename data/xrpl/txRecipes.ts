@@ -107,7 +107,7 @@ export const RECIPES: Recipe[] = [
   {
     id: "offercreate-permissioned",
     title: "OfferCreate (Permissioned)",
-    isMainnetActive: false,
+    isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "OfferCreate",
       Account: "오퍼 제출 계정",
@@ -165,7 +165,7 @@ export const RECIPES: Recipe[] = [
   {
     id: "escrowcreate-iou",
     title: "EscrowCreate (IOU)",
-    isMainnetActive: false,
+    isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "EscrowCreate",
       Account: "에스크로 생성 계정",
@@ -181,7 +181,7 @@ export const RECIPES: Recipe[] = [
   {
     id: "escrowcreate-mpt",
     title: "EscrowCreate (MPT)",
-    isMainnetActive: false,
+    isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "EscrowCreate",
       Account: "에스크로 생성 계정",
@@ -538,7 +538,7 @@ export const RECIPES: Recipe[] = [
   {
     id: "permissioneddomainset",
     title: "PermissionedDomainSet",
-    isMainnetActive: false,
+    isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "PermissionedDomainSet",
       Account: "도메인 소유자 주소",
@@ -551,7 +551,7 @@ export const RECIPES: Recipe[] = [
   {
     id: "permissioneddomaindelete",
     title: "PermissionedDomainDelete",
-    isMainnetActive: false,
+    isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "PermissionedDomainDelete",
       Account: "도메인 소유자 주소",
