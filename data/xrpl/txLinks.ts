@@ -96,12 +96,13 @@ export const TX_LINKS: TxLink[] = [
     pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.EscrowCancel",
     docref: "https://xrpl.org/docs/references/protocol/transactions/types/escrowcancel",
   },
-  {
-    title: "Batch",
-    jsref: "https://js.xrpl.org/interfaces/Batch.html",
-    pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Batch",
-    docref: "https://xrpl.org/docs/references/protocol/transactions/types/batch",
-  },
+  // Batch — Obsolete (v3.1.1에서 버그로 disabled, BatchV1_1로 교체 예정)
+  // {
+  //   title: "Batch",
+  //   jsref: "https://js.xrpl.org/interfaces/Batch.html",
+  //   pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Batch",
+  //   docref: "https://xrpl.org/docs/references/protocol/transactions/types/batch",
+  // },
   {
     title: "AMMCreate",
     jsref: "https://js.xrpl.org/interfaces/AMMCreate.html",
@@ -182,6 +183,12 @@ export const TX_LINKS: TxLink[] = [
   },
   {
     title: "Clawback",
+    jsref: "https://js.xrpl.org/interfaces/Clawback.html",
+    pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Clawback",
+    docref: "https://xrpl.org/docs/references/protocol/transactions/types/clawback",
+  },
+  {
+    title: "Clawback (MPT)",
     jsref: "https://js.xrpl.org/interfaces/Clawback.html",
     pyref: "https://xrpl-py.readthedocs.io/en/stable/source/xrpl.models.transactions.html#xrpl.models.transactions.Clawback",
     docref: "https://xrpl.org/docs/references/protocol/transactions/types/clawback",

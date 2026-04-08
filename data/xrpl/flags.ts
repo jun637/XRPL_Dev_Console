@@ -468,14 +468,15 @@ export const FLAG_ITEMS: FlagItem[] = [
       detailUrl:
         "https://xrpl.org/docs/references/protocol/transactions/types/nftokenmint"
     },
-    {
-      id: "tf-nftmint-trustline",
-      flag: 4,
-      title: "tfTrustLine",
-      description: "NFT와 관련된 트러스트라인 요구",
-      detailUrl:
-        "https://xrpl.org/docs/references/protocol/transactions/types/nftokenmint"
-    },
+    // tfTrustLine — DEPRECATED. fixRemoveNFTokenAutoTrustLine amendment 이후 설정 시 temINVALID_FLAG
+    // {
+    //   id: "tf-nftmint-trustline",
+    //   flag: 4,
+    //   title: "tfTrustLine",
+    //   description: "NFT와 관련된 트러스트라인 요구",
+    //   detailUrl:
+    //     "https://xrpl.org/docs/references/protocol/transactions/types/nftokenmint"
+    // },
     {
       id: "tf-nftmint-transferable",
       flag: 8,
@@ -586,54 +587,54 @@ export const FLAG_ITEMS: FlagItem[] = [
         "https://xrpl.org/docs/references/protocol/transactions/types/mptokenissuanceset"
     },
     // ─────────────────────────────────────────────
-    // Transaction Flags (tf*) 
+    // Transaction Flags (tf*)
     // ─────────────────────────────────────────────
-    // Batch tf
-    {
-      id: "tf-all-or-nothing",
-      flag: 65536,
-      title: "tfAllOrNothing",
-      description:
-        "모든 트랜잭션이 성공해야 하며 하나라도 실패하면 전체 배치가 실패 (hex 0x00010000)",
-      detailUrl:
-        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
-    },
-    {
-      id: "tf-only-one",
-      flag: 131072,
-      title: "tfOnlyOne",
-      description:
-        "가장 먼저 성공한 트랜잭션만 적용되고 이후 트랜잭션은 실패하거나 건너뜀 (hex 0x00020000)",
-      detailUrl:
-        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
-    },
-    {
-      id: "tf-until-failure",
-      flag: 262144,
-      title: "tfUntilFailure",
-      description:
-        "첫 실패가 발생할 때까지 순서대로 적용하며 이후 트랜잭션은 건너뜀 (hex 0x00040000)",
-      detailUrl:
-        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
-    },
-    {
-      id: "tf-independent",
-      flag: 524288,
-      title: "tfIndependent",
-      description:
-        "실패 여부와 무관하게 모든 트랜잭션을 적용 (hex 0x00080000)",
-      detailUrl:
-        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
-    },
-    {
-      id: "tf-inner-batch-txn",
-      flag: 1073741824,
-      title: "tfInnerBatchTxn",
-      description:
-        "해당 트랜잭션이 Batch 트랜잭션 내부에 있음을 표시. Batch 기능 사용 시 모든 내부 트랜잭션에 이 플래그를 설정해야 함 (hex 0x40000000)",
-      detailUrl:
-        "https://xrpl.org/docs/references/protocol/transactions/types/batch"
-    },
+    // Batch tf — Obsolete (v3.1.1에서 버그로 disabled, BatchV1_1로 교체 예정)
+    // {
+    //   id: "tf-all-or-nothing",
+    //   flag: 65536,
+    //   title: "tfAllOrNothing",
+    //   description:
+    //     "모든 트랜잭션이 성공해야 하며 하나라도 실패하면 전체 배치가 실패 (hex 0x00010000)",
+    //   detailUrl:
+    //     "https://xrpl.org/docs/references/protocol/transactions/types/batch"
+    // },
+    // {
+    //   id: "tf-only-one",
+    //   flag: 131072,
+    //   title: "tfOnlyOne",
+    //   description:
+    //     "가장 먼저 성공한 트랜잭션만 적용되고 이후 트랜잭션은 실패하거나 건너뜀 (hex 0x00020000)",
+    //   detailUrl:
+    //     "https://xrpl.org/docs/references/protocol/transactions/types/batch"
+    // },
+    // {
+    //   id: "tf-until-failure",
+    //   flag: 262144,
+    //   title: "tfUntilFailure",
+    //   description:
+    //     "첫 실패가 발생할 때까지 순서대로 적용하며 이후 트랜잭션은 건너뜀 (hex 0x00040000)",
+    //   detailUrl:
+    //     "https://xrpl.org/docs/references/protocol/transactions/types/batch"
+    // },
+    // {
+    //   id: "tf-independent",
+    //   flag: 524288,
+    //   title: "tfIndependent",
+    //   description:
+    //     "실패 여부와 무관하게 모든 트랜잭션을 적용 (hex 0x00080000)",
+    //   detailUrl:
+    //     "https://xrpl.org/docs/references/protocol/transactions/types/batch"
+    // },
+    // {
+    //   id: "tf-inner-batch-txn",
+    //   flag: 1073741824,
+    //   title: "tfInnerBatchTxn",
+    //   description:
+    //     "해당 트랜잭션이 Batch 트랜잭션 내부에 있음을 표시. Batch 기능 사용 시 모든 내부 트랜잭션에 이 플래그를 설정해야 함 (hex 0x40000000)",
+    //   detailUrl:
+    //     "https://xrpl.org/docs/references/protocol/transactions/types/batch"
+    // },
     // ─────────────────────────────────────────────
     // Ledger Flags (lsf*) — AccountRoot / Offer / RippleState
     // ─────────────────────────────────────────────

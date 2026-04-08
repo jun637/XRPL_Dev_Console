@@ -114,7 +114,7 @@ export const RECIPES: Recipe[] = [
       TakerGets: { currency: "내주는 자산", issuer: "발행자", value: "수량" },
       TakerPays: { currency: "받는 자산", issuer: "발행자", value: "수량" },
       DomainID: "Permissioned DEX 도메인 ID",
-      Expiration: "만료 시각(UNIX) (옵션)",
+      Expiration: "만료 시각(UNIX 초, 제출 시 자동 변환) (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -127,7 +127,7 @@ export const RECIPES: Recipe[] = [
       Account: "오퍼 제출 계정",
       TakerGets: "XRP drops 문자열 또는 IOU 객체",
       TakerPays: "XRP drops 문자열 또는 IOU 객체",
-      Expiration: "만료 시각(UNIX) (옵션)",
+      Expiration: "만료 시각(UNIX 초, 제출 시 자동 변환) (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -155,8 +155,8 @@ export const RECIPES: Recipe[] = [
       Account: "에스크로 생성 계정",
       Destination: "수취자 주소",
       Amount: "XRP drops 문자열",
-      FinishAfter: "해당 시간 이후 완료 가능(UNIX) (옵션)",
-      CancelAfter: "해당 시간 이후 취소 가능(UNIX) (옵션)",
+      FinishAfter: "해당 시간 이후 완료 가능(UNIX 초, 제출 시 자동 변환) (옵션)",
+      CancelAfter: "해당 시간 이후 취소 가능(UNIX 초, 제출 시 자동 변환) (옵션)",
       Condition: "PREIMAGE-SHA-256 조건(hex) (옵션)",
       DestinationTag: "수취자 태그 (옵션)",
       Memos: "메모 배열 (옵션)"
@@ -171,8 +171,8 @@ export const RECIPES: Recipe[] = [
       Account: "에스크로 생성 계정",
       Destination: "수취자 주소",
       Amount: { currency: "토큰코드", issuer: "발행자 주소", value: "수량" },
-      FinishAfter: "해당 시간 이후 완료 가능(UNIX) (옵션)",
-      CancelAfter: "해당 시간 이후 취소 가능(UNIX) (옵션)",
+      FinishAfter: "해당 시간 이후 완료 가능(UNIX 초, 제출 시 자동 변환) (옵션)",
+      CancelAfter: "해당 시간 이후 취소 가능(UNIX 초, 제출 시 자동 변환) (옵션)",
       Condition: "PREIMAGE-SHA-256 조건(hex) (옵션)",
       DestinationTag: "수취자 태그 (옵션)",
       Memos: "메모 배열 (옵션)"
@@ -187,8 +187,8 @@ export const RECIPES: Recipe[] = [
       Account: "에스크로 생성 계정",
       Destination: "수취자 주소",
       Amount: { currency: "MPT코드", issuer: "발행자 주소", value: "수량" },
-      FinishAfter: "해당 시간 이후 완료 가능(UNIX) (옵션)",
-      CancelAfter: "해당 시간 이후 취소 가능(UNIX) (옵션)",
+      FinishAfter: "해당 시간 이후 완료 가능(UNIX 초, 제출 시 자동 변환) (옵션)",
+      CancelAfter: "해당 시간 이후 취소 가능(UNIX 초, 제출 시 자동 변환) (옵션)",
       Condition: "PREIMAGE-SHA-256 조건(hex) (옵션)",
       DestinationTag: "수취자 태그 (옵션)",
       Memos: "메모 배열 (옵션)"
@@ -222,19 +222,21 @@ export const RECIPES: Recipe[] = [
   },
 
   // ─────────────────────────────
-  // Batch
+  // Batch — Obsolete (v3.1.1에서 버그로 disabled, BatchV1_1로 교체 예정)
+  // BatchV1_1 활성화되면 RawTransactions 필드로 부활 예정
   // ─────────────────────────────
-  {
-    id: "batch",
-    title: "Batch",
-    isMainnetActive: false,
-    build: (ctx) => ({
-      TransactionType: "Batch",
-      Transactions: "내부 트랜잭션 배열 (각 내부 트랜잭션에 tfInnerBatchTxn(0x40000000) 플래그 설정정 필요)",
-      Flags: "tfAllOrNothing / tfOnlyOne / tfUntilFailure / tfIndependent 중 선택 (옵션)",
-      Memos: "메모 배열 (옵션)"
-    }),
-  },
+  // {
+  //   id: "batch",
+  //   title: "Batch",
+  //   isMainnetActive: false,
+  //   build: (ctx) => ({
+  //     TransactionType: "Batch",
+  //     RawTransactions: "내부 트랜잭션 배열(2~8개). 각 inner tx는 tfInnerBatchTxn(1073741824) 플래그, Fee:'0', SigningPubKey:'', Sequence>0 필요",
+  //     Flags: "tfAllOrNothing / tfOnlyOne / tfUntilFailure / tfIndependent 중 하나",
+  //     BatchSigners: "다중 계정 배치일 때만 (옵션)",
+  //     Memos: "메모 배열 (옵션)"
+  //   }),
+  // },
   // ─────────────────────────────
   // AMM
   // ─────────────────────────────
@@ -247,7 +249,7 @@ export const RECIPES: Recipe[] = [
       Account: "풀 생성 계정",
       Amount: { currency: "자산1", issuer: "발행자1", value: "예치 수량" },
       Amount2: { currency: "자산2", issuer: "발행자2", value: "예치 수량" },
-      TradingFee: "거래 수수료(0~1000, 1=0.01%) (옵션)",
+      TradingFee: "거래 수수료(0~1000, 1=0.01%)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -260,9 +262,12 @@ export const RECIPES: Recipe[] = [
       Account: "예치하는 계정",
       Asset: { currency: "자산1", issuer: "발행자1" },
       Asset2: { currency: "자산2", issuer: "발행자2" },
-      Amount: { currency: "자산1", issuer: "발행자1", value: "예치 수량 (옵션)" },
-      Amount2: { currency: "자산2", issuer: "발행자2", value: "예치 수량 (옵션)" },
-      LPTokenOut: { currency: "LP 토큰", issuer: "AMM LP 발행자", value: "받고자 하는 LP 수량 (옵션)" },
+      // 모드 플래그 1개 필수. 기본은 tfTwoAsset(두 자산 동시 예치).
+      // 다른 모드: tfLPToken(LP 수량 지정), tfTwoAssetIfEmpty(빈 풀 초기화),
+      //           tfSingleAsset(단일 자산), tfOneAssetLPToken, tfLimitLPToken
+      Flags: "tfTwoAsset",
+      Amount: { currency: "자산1", issuer: "발행자1", value: "예치 수량" },
+      Amount2: { currency: "자산2", issuer: "발행자2", value: "예치 수량" },
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -275,9 +280,11 @@ export const RECIPES: Recipe[] = [
       Account: "인출하는 계정",
       Asset: { currency: "자산1", issuer: "발행자1" },
       Asset2: { currency: "자산2", issuer: "발행자2" },
-      LPTokenIn: { currency: "LP 토큰", issuer: "AMM LP 발행자", value: "소각할 LP 수량 (옵션)" },
-      Amount: { currency: "자산1", issuer: "발행자1", value: "인출 수량 (옵션)" },
-      Amount2: { currency: "자산2", issuer: "발행자2", value: "인출 수량 (옵션)" },
+      // 모드 플래그 1개 필수. 기본은 tfLPToken(LP 토큰 소각하여 두 자산 비례 인출).
+      // 다른 모드: tfWithdrawAll, tfTwoAsset, tfSingleAsset,
+      //           tfOneAssetWithdrawAll, tfOneAssetLPToken, tfLimitLPToken
+      Flags: "tfLPToken",
+      LPTokenIn: { currency: "LP 토큰", issuer: "AMM LP 발행자", value: "소각할 LP 수량" },
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -326,11 +333,13 @@ export const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "AMMClawback",
-      Account: "발행자(회수 주체) 주소",
-      Asset: { currency: "자산1", issuer: "발행자1" },
-      Asset2: { currency: "자산2", issuer: "발행자2" },
+      Account: "발행자(회수 주체, Asset issuer와 동일해야 함)",
       Holder: "회수 대상 보유자 주소",
-      Amount: { currency: "회수할 자산", issuer: "발행자1 또는 2", value: "수량" },
+      Asset: { currency: "회수할 자산(발행자 본인 토큰)", issuer: "Account와 동일" },
+      Asset2: { currency: "AMM 풀의 다른 자산", issuer: "다른 자산 발행자" },
+      Amount: { currency: "Asset과 동일", issuer: "Asset issuer와 동일", value: "최대 회수 수량 (생략 시 전액)" },
+      // tfClawTwoAssets 플래그 시 두 자산 모두 비례 회수
+      Flags: "tfClawTwoAssets 설정 시 두 자산 모두 회수 (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -346,9 +355,9 @@ export const RECIPES: Recipe[] = [
       TransactionType: "CredentialCreate",
       Account: "발급자(issuer) 주소",
       Subject: "피발급자(subject) 주소",
-      CredentialType: "자격증명 유형",
-      URI: "관련 문서/레지스트리 URI (옵션)",
-      Expiration: "만료 시각(UNIX) (옵션)",
+      CredentialType: "자격증명 유형(hex 인코딩)",
+      URI: "관련 문서/레지스트리 URI(hex 인코딩) (옵션)",
+      Expiration: "만료 시각(UNIX 초, 제출 시 자동 변환) (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -360,8 +369,7 @@ export const RECIPES: Recipe[] = [
       TransactionType: "CredentialAccept",
       Account: "수령자(holder) 주소",
       Issuer: "발급자 주소",
-      CredentialType: "자격증명 유형",
-      URI: "관련 문서/레지스트리 URI (옵션)",
+      CredentialType: "자격증명 유형(hex)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -371,9 +379,10 @@ export const RECIPES: Recipe[] = [
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "CredentialDelete",
-      Account: "삭제 요청자 주소(일반적으로 발급자)",
-      Subject: "피발급자(subject) 주소",
-      CredentialType: "자격증명 유형",
+      Account: "삭제 요청자 주소(holder 또는 issuer, 만료 시 누구나)",
+      Subject: "피발급자(subject) 주소 (Subject/Issuer 중 최소 하나)",
+      Issuer: "발급자 주소 (Subject/Issuer 중 최소 하나) (옵션)",
+      CredentialType: "자격증명 유형(hex)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -400,8 +409,7 @@ export const RECIPES: Recipe[] = [
       TransactionType: "CheckCash",
       Account: "체크의 Destination(수취자) 주소",
       CheckID: "64자리 체크 ID(헥사)",
-      Amount: "교환 금액 (XRP drops | IOU 객체) (옵션)",
-      DeliverMin: "최소 수령 금액 (XRP drops | IOU 객체) (옵션)",
+      Amount: "교환 금액 (XRP drops | IOU 객체, 원본 SendMax와 통화 일치)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -415,7 +423,7 @@ export const RECIPES: Recipe[] = [
       Destination: "수취자 주소",
       SendMax: "최대 금액 (XRP drops | IOU 객체)",
       DestinationTag: "수취자 태그 (옵션)",
-      Expiration: "만료 시각(UNIX) (옵션)",
+      Expiration: "만료 시각(UNIX 초, 제출 시 자동 변환) (옵션)",
       InvoiceID: "64바이트 hex (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
@@ -436,14 +444,40 @@ export const RECIPES: Recipe[] = [
     }),
   },
   {
+    id: "clawback-mpt",
+    title: "Clawback (MPT)",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "Clawback",
+      Account: "회수자(발행자) 주소",
+      Amount: { mpt_issuance_id: "회수할 MPT의 ISSUANCE ID", value: "회수할 수량" },
+      Holder: "회수 대상 보유자 주소",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
     id: "depositpreauth",
     title: "DepositPreauth",
     isMainnetActive: true,
     build: (ctx) => ({
       TransactionType: "DepositPreauth",
       Account: "예치 사전승인(DepositAuth) 설정 계정",
-      Authorize: "사전 승인할 계정 주소 (Authorize/Unauthorize 중 택1)",
-      Unauthorize: "사전 승인 해제할 계정 주소 (Authorize/Unauthorize 중 택1)",
+      Authorize: "사전 승인할 계정 주소 (4개 옵션 중 택1)",
+      Unauthorize: "사전 승인 해제할 계정 주소 (4개 옵션 중 택1)",
+      Memos: "메모 배열 (옵션)"
+    }),
+  },
+  {
+    id: "depositpreauth-credentials",
+    title: "DepositPreauth (Credentials)",
+    isMainnetActive: true,
+    build: (ctx) => ({
+      TransactionType: "DepositPreauth",
+      Account: "예치 사전승인(DepositAuth) 설정 계정",
+      // Authorize/Unauthorize/AuthorizeCredentials/UnauthorizeCredentials 중 택1
+      AuthorizeCredentials: [
+        { Credential: { Issuer: "발급자 주소", CredentialType: "자격증명 유형(hex)" } }
+      ],
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -464,9 +498,9 @@ export const RECIPES: Recipe[] = [
     build: (ctx) => ({
       TransactionType: "DIDSet",
       Account: "DID 소유자 주소",
-      Data: "임의 데이터(hex) (옵션)",
-      DIDDocument: "DID Document JSON(hex) (옵션)",
-      URI: "hex-encoded URI (옵션)",
+      Data: "임의 데이터(hex) (Data/DIDDocument/URI 중 최소 하나 필수)",
+      DIDDocument: "DID Document JSON(hex) (Data/DIDDocument/URI 중 최소 하나 필수)",
+      URI: "hex-encoded URI (Data/DIDDocument/URI 중 최소 하나 필수)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -478,20 +512,13 @@ export const RECIPES: Recipe[] = [
     title: "MPTokenIssuanceCreate",
     isMainnetActive: true,
     build: (ctx) => ({
-        "TransactionType": "MPTokenIssuanceCreate",
-        "Account": "rQfhnkSE62fGmdhXr2FE2vjCVnQdceoN61",
-        "AssetScale": 4,
-        "TransferFee": 0,
-        "MaximumAmount": "5000000000",
-        "Fee": "12",
-        "Flags": {
-          tfMPTCanClawback: true,
-          tfMPTCanEscrow: true,
-          tfMPTCanLock: true,
-          tfMPTCanTrade: true,
-          tfMPTCanTransfer: true,
-          tfMPTRequireAuth: false
-        }
+      TransactionType: "MPTokenIssuanceCreate",
+      Account: "발행자(issuer) 주소",
+      AssetScale: "소수점 자릿수 (옵션)",
+      TransferFee: "이전 수수료(0~50000, 1=0.001%) (옵션)",
+      MaximumAmount: "최대 발행량 문자열 (옵션)",
+      Flags: "tfMPTCanLock|tfMPTRequireAuth|tfMPTCanEscrow|tfMPTCanTrade|tfMPTCanTransfer|tfMPTCanClawback 조합 (옵션)",
+      Memos: "메모 배열 (옵션)"
     }),
   },
   {
@@ -501,7 +528,7 @@ export const RECIPES: Recipe[] = [
     build: (ctx) => ({
       TransactionType: "MPTokenIssuanceDestroy",
       Account: "발행자(issuer) 주소",
-      IssuanceID: "삭제할 발행(issuance) 식별자",
+      MPTokenIssuanceID: "삭제할 발행(issuance) 식별자",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -512,8 +539,9 @@ export const RECIPES: Recipe[] = [
     build: (ctx) => ({
       TransactionType: "MPTokenIssuanceSet",
       Account: "발행자(issuer) 주소",
-      IssuanceID: "대상 issuance ID (Create 트랜잭션 해시 클릭 후 Explorer에서 확인)",
-      // 잠금/해제는 Flags 비트로 설정
+      MPTokenIssuanceID: "대상 issuance ID (Create 트랜잭션 해시 클릭 후 Explorer에서 확인)",
+      Holder: "특정 보유자만 잠금/해제할 때 지정 (옵션)",
+      // 잠금/해제는 Flags 비트로 설정 (mutually exclusive)
       Flags: "tfMPTLock 또는 tfMPTUnlock 설정 (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
@@ -525,8 +553,8 @@ export const RECIPES: Recipe[] = [
     build: (ctx) => ({
       TransactionType: "MPTokenAuthorize",
       Account: "제출 계정(보유자 또는 발행자)",
-      Asset: { currency: "MPT 코드", issuer: "발행자 주소" },
-      Holder: "보유자 주소 (발행자가 권한 취소/부여 시 필수) (옵션)",
+      MPTokenIssuanceID: "대상 MPT issuance ID",
+      Holder: "발행자가 특정 보유자 권한 부여/취소 시 지정 (옵션)",
       Flags: "tfMPTUnauthorize 설정 시 보유 의사 철회/권한 취소 동작 (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
@@ -542,9 +570,11 @@ export const RECIPES: Recipe[] = [
     build: (ctx) => ({
       TransactionType: "PermissionedDomainSet",
       Account: "도메인 소유자 주소",
-      DomainID: "도메인 식별자",
-      Description: "도메인 설명 (옵션)",
-      Rules: "권한/규칙 JSON (옵션)",
+      // 신규 생성 시 DomainID 생략, 기존 도메인 수정 시에만 지정
+      DomainID: "수정할 도메인 ledger entry ID (옵션)",
+      AcceptedCredentials: [
+        { Credential: { Issuer: "발급자 주소", CredentialType: "자격증명 유형(hex, 1~64 bytes)" } }
+      ],
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -573,7 +603,7 @@ export const RECIPES: Recipe[] = [
       // 둘 중 하나(단일), 또는 둘 다(브로커드 모드)
       NFTokenBuyOffer: "구매 오퍼 ID (옵션)",
       NFTokenSellOffer: "판매 오퍼 ID (옵션)",
-      BrokerFee: { currency: "수수료 통화", issuer: "발행자 주소", value: "수수료 수량 (옵션)" },
+      NFTokenBrokerFee: "브로커드 모드 수수료 (XRP drops 문자열 | IOU 객체) (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -610,9 +640,10 @@ export const RECIPES: Recipe[] = [
       NFTokenID: "대상 NFT ID",
       // 판매 오퍼: Amount는 받으려는 대가 / 구매 오퍼: 구매자가 지불할 금액
       Amount: "XRP drops | IOU 객체",
-      Owner: "NFT 소유자 주소(구매 오퍼일 때 필요) (옵션)",
+      Owner: "NFT 소유자 주소(구매 오퍼일 때 필수, 판매 오퍼일 때 금지) (옵션)",
       Destination: "오퍼 수락 가능 계정 제한 (옵션)",
-      Expiration: "만료 시각(UNIX) (옵션)",
+      Expiration: "만료 시각(UNIX 초, 제출 시 자동 변환) (옵션)",
+      Flags: "tfSellNFToken(1) — 판매 오퍼면 설정, 구매 오퍼면 생략 (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -627,7 +658,7 @@ export const RECIPES: Recipe[] = [
       URI: "hex-encoded 메타데이터 URI (옵션)",
       TransferFee: "이차 판매 수수료(bps) (옵션)",
       Issuer: "대리 발행 시 지정(옵션)",
-      Flags: "tfBurnable|tfOnlyXRP|tfTrustLine|tfTransferable 등 (옵션)",
+      Flags: "tfBurnable|tfOnlyXRP|tfTransferable|tfMutable 등 (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -639,9 +670,8 @@ export const RECIPES: Recipe[] = [
       TransactionType: "NFTokenModify",
       Account: "수정 트랜잭션 제출 계정",
       NFTokenID: "수정할 NFT ID",
-      URI: "새 hex-encoded URI (옵션)",
-      TransferFee: "새 이차 판매 수수료(bps) (옵션)",
-      Flags: "수정 관련 플래그 (옵션)",
+      Owner: "Account와 다를 때만 지정 (옵션)",
+      URI: "새 hex-encoded URI (생략 시 기존 URI 삭제) (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -666,8 +696,8 @@ export const RECIPES: Recipe[] = [
       OracleDocumentID: "오라클 문서 ID",
       LastUpdateTime: "최종 업데이트 시각(UNIX)",
       PriceDataSeries: "가격 데이터 시리즈 배열",
-      Provider: "프로바이더 식별자(HEX ASCII) (옵션)",
-      AssetClass: "자산 클래스(HEX ASCII) (옵션)",
+      Provider: "프로바이더 식별자(ASCII hex, 최대 256자) (신규 생성 시 필수)",
+      AssetClass: "자산 클래스(ASCII hex, 최대 16자) (신규 생성 시 필수)",
       URI: "오라클 메타데이터 URI (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
@@ -702,7 +732,7 @@ export const RECIPES: Recipe[] = [
     build: (ctx) => ({
       TransactionType: "TicketCreate",
       Account: "티켓 발급 계정 주소",
-      TicketCount: "발급할 티켓 개수",
+      TicketCount: "발급할 티켓 개수(1~250, 보유 합계 250 이내)",
       Memos: "메모 배열 (옵션)"
     }),
   },
@@ -733,7 +763,7 @@ export const RECIPES: Recipe[] = [
       Destination: "수신자 주소",
       SettleDelay: "정산 지연 시간(초)",
       PublicKey: "송신자 공개키(HEX)",
-      CancelAfter: "만료 시각(UNIX) (옵션)",
+      CancelAfter: "만료 시각(UNIX 초, 제출 시 자동 변환) (옵션)",
       DestinationTag: "수신자 태그 (옵션)",
       SourceTag: "송신자 태그 (옵션)",
       Memos: "메모 배열 (옵션)"
@@ -748,7 +778,7 @@ export const RECIPES: Recipe[] = [
       Account: "채널 소유자 주소",
       Channel: "채널 ID(64바이트 HEX)",
       Amount: "추가 펀딩 금액(drops)",
-      Expiration: "만료 시각(UNIX) (옵션)",
+      Expiration: "만료 시각(UNIX 초, 제출 시 자동 변환) (옵션)",
       Memos: "메모 배열 (옵션)"
     }),
   }

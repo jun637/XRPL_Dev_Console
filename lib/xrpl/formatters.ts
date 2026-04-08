@@ -47,6 +47,34 @@ export const formatIssuedBalance = (value: number): string => {
   return fixed === "-0.000000" ? "0.000000" : fixed;
 };
 
+export const unixToRippleTime = (unix: number): number => unix - rippleEpoch;
+
+// TransactionType별 Ripple Epoch 기준 시간 필드 화이트리스트
+const RIPPLE_TIME_FIELDS: Record<string, readonly string[]> = {
+  EscrowCreate: ["FinishAfter", "CancelAfter"],
+  OfferCreate: ["Expiration"],
+  CheckCreate: ["Expiration"],
+  NFTokenCreateOffer: ["Expiration"],
+  PaymentChannelCreate: ["CancelAfter"],
+  PaymentChannelFund: ["Expiration"],
+  CredentialCreate: ["Expiration"],
+};
+
+// 사용자가 UNIX 초로 입력한 시간 필드를 Ripple Epoch 기준으로 정규화한다.
+// 이미 Ripple Epoch 값(작은 수)이면 건드리지 않아 이중 변환을 방지한다.
+export const normalizeTxTimeFields = (tx: Record<string, unknown>): void => {
+  const type = tx.TransactionType;
+  if (typeof type !== "string") return;
+  const fields = RIPPLE_TIME_FIELDS[type];
+  if (!fields) return;
+  for (const field of fields) {
+    const v = tx[field];
+    if (typeof v === "number" && v > rippleEpoch) {
+      tx[field] = v - rippleEpoch;
+    }
+  }
+};
+
 export const formatRippleTimeKST = (raw: unknown): string => {
   if (typeof raw !== "number") return "-";
   const unixTime = raw + rippleEpoch;

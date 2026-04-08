@@ -51,7 +51,7 @@ import type { AccountTransactionEntry, SavedWallet } from "@/types/account";
 import { ACCOUNT_FLAG_CONFIG } from "@/data/xrpl/accountFlags";
 import { ColoredJson } from "@/components/ui/ColoredJson";
 import type { ColoredJsonProps } from "@/components/ui/ColoredJson";
-import { formatRippleTimeKST, getTxResult } from "@/lib/xrpl/formatters";
+import { formatRippleTimeKST, getTxResult, normalizeTxTimeFields } from "@/lib/xrpl/formatters";
 import { getErrorMessage } from "@/lib/utils/errors";
 import { extractGirinHash } from "@/lib/girin/hash";
 import { useAccountData } from "@/hooks/useAccountData";
@@ -935,6 +935,7 @@ const {
 
     const parsed = { ...(parsedTx as MutableTx) };
     validateTxJsonShapes(parsed);
+    normalizeTxTimeFields(parsed);
 
     if (!parsed.Account) {
       parsed.Account = account;
