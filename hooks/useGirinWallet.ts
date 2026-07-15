@@ -37,22 +37,6 @@ export function useGirinWallet(network: NetworkKey, projectId?: string) {
   const isSupportedNetwork = network !== "devnet";
   const isConfigured = Boolean(projectId);
 
-  if (!isConfigured) {
-    const unavailable = async () => {
-      throw new Error("Girin Wallet을 사용하려면 NEXT_PUBLIC_PROJECT_ID를 설정해야 합니다.");
-    };
-
-    return {
-      isEnabled: false,
-      isConnecting: false,
-      isConnected: false,
-      accountAddress: null,
-      connect: unavailable,
-      reset: () => {},
-      submitViaGirin: unavailable,
-    };
-  }
-
   const { connect, loading: isConnecting } = useConnect({
     requiredNamespaces: GIRIN_REQUIRED_NAMESPACES,
   });
@@ -71,6 +55,9 @@ export function useGirinWallet(network: NetworkKey, projectId?: string) {
   const isEnabled = isSupportedNetwork && isConfigured;
 
   const connectGirin = async () => {
+    if (!isConfigured) {
+      throw new Error("Girin Wallet을 사용하려면 NEXT_PUBLIC_PROJECT_ID를 설정해야 합니다.");
+    }
     if (!isEnabled) {
       throw new Error("현재 네트워크에서는 Girin Wallet을 사용할 수 없습니다.");
     }
@@ -87,6 +74,9 @@ export function useGirinWallet(network: NetworkKey, projectId?: string) {
   };
 
   const submitViaGirin = async (txJson: Record<string, unknown>): Promise<Record<string, unknown> | null> => {
+    if (!isConfigured) {
+      throw new Error("Girin Wallet을 사용하려면 NEXT_PUBLIC_PROJECT_ID를 설정해야 합니다.");
+    }
     if (!session) {
       throw new Error("Girin Wallet 세션이 활성화되어 있지 않습니다.");
     }

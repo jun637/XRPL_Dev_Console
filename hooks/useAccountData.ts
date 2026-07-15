@@ -87,7 +87,7 @@ export const useAccountData = ({
                   return null;
                 }
                 const issuanceId = typeof (entry as { MPTokenIssuanceID?: unknown }).MPTokenIssuanceID === "string"
-                  ? (entry as { MPTokenIssuanceID: string }).MPTokenIssuanceID
+                  ? (entry as unknown as { MPTokenIssuanceID: string }).MPTokenIssuanceID
                   : null;
                 if (!issuanceId) {
                   return null;
